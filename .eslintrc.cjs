@@ -11,16 +11,25 @@ module.exports = {
   extends: [
     'standard',
     'prettier',
-    'eslint:recommended',
-    'plugin:wdio/recommended'
+    'eslint:recommended'
   ],
-  overrides: [],
   parserOptions: {
-    ecmaVersion: 'latest'
+    ecmaVersion: 'latest',
+    sourceType: 'module'
   },
-  plugins: ['prettier', 'wdio'],
+  plugins: ['prettier'],
   rules: {
     'prettier/prettier': 'error',
     'no-console': 'error'
-  }
+  },
+  overrides: [
+    {
+      files: ['*.ts', '*.tsx'],
+      parser: '@typescript-eslint/parser',
+      plugins: ['@typescript-eslint'],
+      extends: [
+        'plugin:@typescript-eslint/recommended'
+      ]
+    }
+  ]
 }

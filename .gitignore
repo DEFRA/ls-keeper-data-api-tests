@@ -11,3 +11,6 @@ coverage
 allure-report/
 allure-results/
 FAILED
+playwright-report/
+test-results/
+

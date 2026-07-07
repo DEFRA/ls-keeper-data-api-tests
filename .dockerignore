@@ -3,3 +3,5 @@ Dockerfile
 .git
 .github
 .husky
+playwright-report/
+test-results/
