@@ -13,4 +13,6 @@ allure-results/
 FAILED
 playwright-report/
 test-results/
-
+.env
+.env.*
+!.env.example
