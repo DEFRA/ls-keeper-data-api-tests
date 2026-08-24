@@ -6,7 +6,7 @@ import { expect } from '@playwright/test'
 export const DATASET_PRIMARY_KEYS: Record<string, string> = {
   sam_showground: 'CPH',
   sam_cph_holdings: 'CPH',
-  sam_cph_holder: 'CPH',
+  sam_cph_holder: 'PARTY_ID',
   sam_party: 'PARTY_ID',
   sam_herd: 'HERDMARK',
   sam_tla: 'TLA_ID',
