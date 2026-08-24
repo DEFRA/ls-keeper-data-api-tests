@@ -8,7 +8,7 @@ export const DATASET_PRIMARY_KEYS: Record<string, string> = {
   sam_cph_holdings: 'CPH',
   sam_cph_holder: 'CPH',
   sam_party: 'PARTY_ID',
-  sam_herd: 'HERD_MARK',
+  sam_herd: 'HERDMARK',
   sam_tla: 'TLA_ID',
   cts_cph_holding: 'CPH',
   cts_keeper: 'KEEPER_ID',
