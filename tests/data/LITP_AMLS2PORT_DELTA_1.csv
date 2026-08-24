@@ -1,0 +1,6 @@
+BATCH_ID|CHANGE_TYPE|CPH  |PREMISES_NAME            |ADDRESS_LINE_1   |ADDRESS_LINE_2  |ADDRESS_LINE_3                              |POSTCODE|MAP_REFERENCE|EASTING|NORTHING
+22      |U          |ABRDD|Aberdeen Docks Expanded  |Aberdeen Docks   |Harbour Office  |16 Regent Quay Suite #2 Aberdeen AB11 5SS   |AB11 5SS|NJ944061     |394400 |806100  
+22      |U          |DOVER|Dover Ferry Terminal Port|Dover Western    |Harbour House   |Marine Parade Dover Kent CT17 9BU           |CT17 9BU|TR318413     |631800 |141300  
+22      |I          |PLYMT|Plymouth Millbay Docks   |Millbay Docks    |Ferry Terminal  |Millbay Road Plymouth Devon PL1 3EW         |PL1 3EW |SX468538     |246800 |053800  
+22      |I          |HEYS2|Heysham Port Harbour     |Heysham Port     |Terminal Office |North Quay Heysham Morecambe Lancs LA3 2XF  |LA3 2XF |SD404601     |340400 |460100  
+22      |D          |POOLE|Poole Port               |Poole Port       |New Quay Road   |Hamworthy Poole Dorset BH15 4AJ             |BH15 4AJ|SZ008902     |400800 |090200  

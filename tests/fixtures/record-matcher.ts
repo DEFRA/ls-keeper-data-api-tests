@@ -13,8 +13,8 @@ export const DATASET_PRIMARY_KEYS: Record<string, string> = {
   cts_cph_holding: 'CPH',
   cts_keeper: 'KEEPER_ID',
   cts_agent: 'AGENT_ID',
-  amls2_common_land: 'CPH',
-  amls2_port: 'PORT_ID',
+  amls2_common_land: 'COMMON_LAND_PREMISE_ID',
+  amls2_port: 'CPH',
   ames_haulier: 'HAULIER_ID'
 }
 
