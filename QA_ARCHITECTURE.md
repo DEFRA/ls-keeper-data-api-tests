@@ -12,7 +12,9 @@ The **Data Bridge ETL v2** replaces the legacy MongoDB-centric ETL with a high-p
 
 Because downstream consumer business REST APIs (e.g. `/api/sites`, `/api/parties`) do not yet exist for the v2 pipeline, this test framework implements a **pure E2E Black-Box Integration Test Strategy**:
 
-$$\textbf{Encrypted CSV Ingestion (S3)} \longrightarrow \textbf{Black-Box ETL Engine} \longrightarrow \textbf{DuckDB Extract & Snapshot Assertion}$$
+```text
+[ Encrypted CSV Ingestion (S3) ] ──▶ [ Black-Box ETL Engine ] ──▶ [ DuckDB & Snapshot Extract Assertion ]
+```
 
 The test suite treats the entire backend pipeline as a single black box. Tests do not inspect internal S3 intermediate folders (`raw/`, `normalised/`, `snapshots/`); instead, they verify that **the data ingested at the start accurately matches the data extracted from DuckDB and snapshots at the end**.
 
@@ -32,15 +34,15 @@ sequenceDiagram
     participant DuckDB as Output DuckDB File
 
     Note over Test,Purge: 1. Suite Initialization
-    Test->>Purge: DELETE /api/etl/storage?dataset={dataset}&stage=all (beforeAll)
+    Test->>Purge: DELETE /api/etl/storage (dataset, stage=all)
     Purge-->>Test: 200 OK (Purges leftover/stuck files from past runs)
 
     Note over Test,S3: 2. Ingestion Phase
     Test->>Test: Prepare test CSV/PSV fixtures from disk
     Test->>Test: Derive password & Encrypt buffer (AES-256-ECB)
-    Test->>S3: Upload encrypted file: POST /api/ExternalCatalogue/upload
-    Test->>API: Trigger import: POST /api/etl/imports?dataset={dataset}
-    API-->>Test: Return 200/202 { importId, status: "Queued" | "Running" }
+    Test->>S3: Upload encrypted file (POST /api/ExternalCatalogue/upload)
+    Test->>API: Trigger import (POST /api/etl/imports)
+    API-->>Test: Return 200/202 (importId, status: Queued/Running)
 
     Note over ETL: 3. Autonomous Processing (Black Box)
     ETL->>ETL: Discover -> Decrypt -> Normalise (Parquet) -> Snapshot / Delta Fold -> Load DuckDB
@@ -48,13 +50,13 @@ sequenceDiagram
     Note over Test,StatusAPI: 4. Polling Phase
     loop Poll until Succeeded / Completed / Failed
         Test->>StatusAPI: GET /api/etl/imports/{importId}
-        StatusAPI-->>Test: Return status ("Succeeded") + presignedDuckDbUri + stage metrics
+        StatusAPI-->>Test: Return status (Succeeded) + presignedDuckDbUri + stage metrics
     end
 
     Note over Test,DuckDB: 5. Verification Phase
     Test->>DuckDB: Download .duckdb database via presigned URI
     Test->>DuckDB: Open database in-memory and query target table
-    Test->>Test: Assert: DuckDB Table Rows == Ingested Input Data (via custom matchers)
+    Test->>Test: Assert: DuckDB Table Rows match Ingested Input Data
 ```
 
 ---
