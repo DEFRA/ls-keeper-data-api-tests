@@ -28,6 +28,22 @@ export interface ImportStatusResponse {
   stages?: ImportStage[]
 }
 
+export type EtlStage =
+  | 'all'
+  | 'inbound'
+  | 'raw'
+  | 'normalised'
+  | 'snapshots'
+  | 'staging'
+
+export type SourceType = 'internal' | 'external'
+
+export interface PurgeStorageOptions {
+  dataset?: string
+  stage?: EtlStage
+  sourceType?: SourceType
+}
+
 export class EtlClient {
   constructor(
     private request: APIRequestContext,
@@ -44,15 +60,29 @@ export class EtlClient {
   }
 
   /**
-   * Cleans internal storage drop-zone of raw files
+   * Purges ETL v2 pipeline storage across stages (DELETE /api/etl/storage)
+   */
+  async purgeStorage(options: PurgeStorageOptions = {}): Promise<void> {
+    const { dataset = 'all', stage = 'all', sourceType } = options
+    const params: Record<string, string> = { dataset, stage }
+    if (sourceType) params.sourceType = sourceType
+
+    const response = await this.request.delete('api/etl/storage', {
+      headers: this.getHeaders(),
+      params
+    })
+
+    expect(
+      response.ok(),
+      `Storage purge failed with HTTP ${response.status()}: ${await response.text()}`
+    ).toBeTruthy()
+  }
+
+  /**
+   * Cleans storage (delegates to full purge across all datasets and stages)
    */
   async cleanStorage(): Promise<void> {
-    await this.request.delete(
-      'api/Import/internal-storage?sourceType=internal',
-      {
-        headers: this.getHeaders()
-      }
-    )
+    await this.purgeStorage({ dataset: 'all', stage: 'all' })
   }
 
   /**

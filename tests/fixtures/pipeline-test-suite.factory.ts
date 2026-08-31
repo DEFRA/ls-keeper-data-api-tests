@@ -1,6 +1,7 @@
 import { test, expect } from './etl-pipeline.fixture.js'
 import { parseCsvFile } from '../helpers/csv-parser.js'
 import { DATASET_PRIMARY_KEYS } from './record-matcher.js'
+import { EtlClient } from '../helpers/etl-client.js'
 import path from 'path'
 import { fileURLToPath } from 'url'
 
@@ -36,6 +37,21 @@ export function definePipelineTestSuite(config: PipelineSuiteConfig) {
       test.setTimeout(config.timeout)
     }
 
+    // Purge previous leftover or stuck files for this dataset across all pipeline stages before suite runs
+    test.beforeAll(async ({ request }) => {
+      const etlClient = new EtlClient(request)
+      await etlClient.purgeStorage({
+        dataset: datasetName,
+        stage: 'all',
+        sourceType: 'external'
+      })
+      await etlClient.purgeStorage({
+        dataset: datasetName,
+        stage: 'all',
+        sourceType: 'internal'
+      })
+    })
+
     // Pre-load CSV test data files from disk
     const baselineRecords = parseCsvFile(
       path.join(dataDirectory, config.baselineFile)
@@ -52,8 +68,6 @@ export function definePipelineTestSuite(config: PipelineSuiteConfig) {
       etlClient,
       duckDbClient
     }) => {
-      await etlClient.cleanStorage()
-
       const { encryptedFilename } = await etlClient.uploadFile(
         config.baselineFile
       )
