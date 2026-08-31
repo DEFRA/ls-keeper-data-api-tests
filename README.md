@@ -1,8 +1,10 @@
-ls-keeper-data-api-tests
+# ls-keeper-data-api-tests
 
-The template to create a service that runs Playwright tests against an environment.
+Automated integration test suite for the **Defra KRDS Data Bridge ETL v2** pipeline using Playwright and DuckDB.
 
-- [Local](#local-development)
+> 📖 **Architecture & Test Strategy:** For full end-to-end design, sequence diagrams, business rules, and test matrices, see [QA_ARCHITECTURE.md](QA_ARCHITECTURE.md).
+
+- [Local Development](#local-development)
   - [Requirements](#requirements)
     - [Node.js](#nodejs)
   - [Setup](#setup)
