@@ -1,0 +1,4 @@
+BATCH_ID|CHANGE_TYPE|CPH  |PREMISES_NAME            |ADDRESS_LINE_1   |ADDRESS_LINE_2  |ADDRESS_LINE_3                              |POSTCODE|MAP_REFERENCE|EASTING|NORTHING
+23      |U          |ABRDD|Aberdeen Royal Sea Port  |Aberdeen Docks   |Harbour Office  |16 Regent Quay Suite #2 Aberdeen AB11 5SS   |AB11 5SS|NJ944061     |394400 |806100  
+23      |U          |PLYMT|Plymouth International   |Millbay Docks    |Customs Gate    |Millbay Road Plymouth Devon PL1 3EW         |PL1 3EW |SX468538     |246800 |053800  
+23      |I          |NEWHV|Newhaven Port Harbour    |Newhaven Port    |Ferry Terminal  |Railway Approach Newhaven Sussex BN9 0DF    |BN9 0DF |TQ451009     |545100 |100900  

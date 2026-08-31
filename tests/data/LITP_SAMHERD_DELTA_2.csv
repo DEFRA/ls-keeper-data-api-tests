@@ -1,0 +1,4 @@
+BATCH_ID|CHANGE_TYPE|HERDMARK|CPHH       |ANIMAL_SPECIES_CODE|ANIMAL_PURPOSE_CODE|OWNER_PARTY_IDS|KEEPER_PARTY_IDS|ANIMAL_GROUP_ID_MCH_FRM_DAT|ANIMAL_GROUP_ID_MCH_TO_DAT|INTERVALS|INTERVAL_UNIT_OF_TIME|DISEASE_TYPE|MOVEMENT_RSTRCTN_RSN_CODE
+3       |U          |H3700001|37/002/0002|Cattle             |DAIRY_PROD         |               |C3700001        |2025-01-01                 |2030-12-31                 |36       |Months               |TB          |RESTRICTED               
+3       |U          |H3700099|52/123/0001|Cattle             |BREEDING_PEDIGREE  |               |C3700099        |2026-01-01                 |                          |24       |Months               |            |                         
+3       |I          |H3700101|15/999/0001|Goats              |DAIRY              |               |C3700101        |2026-06-01                 |                          |12       |Months               |            |                         

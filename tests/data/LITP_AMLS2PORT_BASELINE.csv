@@ -1,0 +1,9 @@
+BATCH_ID|CHANGE_TYPE|CPH  |PREMISES_NAME    |ADDRESS_LINE_1   |ADDRESS_LINE_2  |ADDRESS_LINE_3                              |POSTCODE|MAP_REFERENCE|EASTING|NORTHING
+21      |I          |ABRDD|Aberdeen Docks   |Aberdeen Docks   |Harbour Office  |16 Regent Quay Aberdeen AB11 5SS            |AB11 5SS|NJ944061     |394400 |806100  
+21      |I          |AVNMD|Avonmouth Docks  |Avonmouth Docks  |St Andrews House|St Andrews Road Avonmouth Bristol BS11 9QD  |BS11 9QD|ST523779     |352300 |177900  
+21      |I          |DOVER|Dover Port Docks |Dover Western    |Harbour House   |Marine Parade Dover Kent CT17 9BU           |CT17 9BU|TR318413     |631800 |141300  
+21      |I          |HOLYH|Holyhead Port    |Holyhead Port    |Terminal 1      |London Road Holyhead Anglesey LL65 1DQ      |LL65 1DQ|SH248824     |224800 |382400  
+21      |I          |PORTS|Portsmouth Docks |Portsmouth Port  |Wharf Road      |Wharf Road Portsmouth Hampshire PO2 8RU     |PO2 8RU |SZ638012     |463800 |101200  
+21      |I          |POOLE|Poole Port       |Poole Port       |New Quay Road   |Hamworthy Poole Dorset BH15 4AJ             |BH15 4AJ|SZ008902     |400800 |090200  
+21      |I          |LIVPL|Liverpool Docks  |Port of Liverpool|Maritime Centre |Port of Liverpool Bootle Merseyside L21 1LA |L21 1LA |SJ332958     |333200 |395800  
+21      |I          |SOTON|Southampton Port |Southampton Docks|Dock Gate 4     |Ocean Gate Southampton Hampshire SO14 2DL   |SO14 2DL|SU428114     |442800 |111400  

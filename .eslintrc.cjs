@@ -1,35 +1,22 @@
 module.exports = {
+  root: true,
   env: {
     es2022: true,
-    node: true,
-    jest: true
+    node: true
   },
-  globals: {
-    before: true,
-    after: true
-  },
-  extends: [
-    'standard',
-    'prettier',
-    'eslint:recommended'
-  ],
+  parser: '@typescript-eslint/parser',
   parserOptions: {
     ecmaVersion: 'latest',
     sourceType: 'module'
   },
-  plugins: ['prettier'],
+  plugins: ['@typescript-eslint'],
+  extends: [
+    'eslint:recommended',
+    'plugin:@typescript-eslint/recommended',
+    'prettier'
+  ],
   rules: {
-    'prettier/prettier': 'error',
-    'no-console': 'error'
-  },
-  overrides: [
-    {
-      files: ['*.ts', '*.tsx'],
-      parser: '@typescript-eslint/parser',
-      plugins: ['@typescript-eslint'],
-      extends: [
-        'plugin:@typescript-eslint/recommended'
-      ]
-    }
-  ]
+    'no-console': 'warn',
+    '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }]
+  }
 }
