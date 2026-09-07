@@ -119,7 +119,8 @@ export class EtlClient {
    */
   async triggerImport(
     dataset?: string,
-    sourceType: SourceType = 'external'
+    sourceType: SourceType = (process.env.SOURCE_TYPE as SourceType) ||
+      'external'
   ): Promise<ImportTriggerResponse> {
     const params: Record<string, string> = {}
     if (dataset) params.dataset = dataset
@@ -233,7 +234,8 @@ export class EtlClient {
    */
   async importDataset(
     dataset?: string,
-    sourceType: SourceType = 'external',
+    sourceType: SourceType = (process.env.SOURCE_TYPE as SourceType) ||
+      'external',
     timeout = 60000,
     interval = 2000
   ): Promise<ImportStatusResponse> {

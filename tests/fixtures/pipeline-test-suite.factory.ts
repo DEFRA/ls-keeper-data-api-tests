@@ -1,7 +1,7 @@
 import { test, expect } from './etl-pipeline.fixture.js'
 import { parseCsvFile } from '../helpers/csv-parser.js'
 import { DATASET_PRIMARY_KEYS } from './record-matcher.js'
-import { EtlClient } from '../helpers/etl-client.js'
+import { EtlClient, EtlStage } from '../helpers/etl-client.js'
 import path from 'path'
 import { fileURLToPath } from 'url'
 
@@ -37,19 +37,28 @@ export function definePipelineTestSuite(config: PipelineSuiteConfig) {
       test.setTimeout(config.timeout)
     }
 
-    // Purge previous leftover or stuck files for this dataset across all pipeline stages before suite runs
+    // Purge previous leftover or stuck files for this dataset across inbound and intermediate stages before suite runs
+    // Note: Do NOT purge stage: 'all' or stage: 'staging' here as that deletes the shared DuckDB database in staging
     test.beforeAll(async ({ request }) => {
       const etlClient = new EtlClient(request)
-      await etlClient.purgeStorage({
-        dataset: datasetName,
-        stage: 'all',
-        sourceType: 'external'
-      })
-      await etlClient.purgeStorage({
-        dataset: datasetName,
-        stage: 'all',
-        sourceType: 'internal'
-      })
+      const stagesToPurge: EtlStage[] = [
+        'inbound',
+        'raw',
+        'normalised',
+        'snapshots'
+      ]
+      for (const stage of stagesToPurge) {
+        await etlClient.purgeStorage({
+          dataset: datasetName,
+          stage,
+          sourceType: 'external'
+        })
+        await etlClient.purgeStorage({
+          dataset: datasetName,
+          stage,
+          sourceType: 'internal'
+        })
+      }
     })
 
     // Pre-load CSV test data files from disk
@@ -75,6 +84,11 @@ export function definePipelineTestSuite(config: PipelineSuiteConfig) {
 
       // 1. Run pipeline import
       const importStatus = await etlClient.importDataset(datasetName)
+      // eslint-disable-next-line no-console
+      console.log(
+        `[${displayName}] Import ${importStatus.importId} status: ${importStatus.status}. ` +
+          `Stages: ${JSON.stringify(importStatus.stages?.map((s) => ({ name: s.name, items: s.itemCount, ms: s.elapsedMs })))}`
+      )
       expect(importStatus.status).toBe('Succeeded')
 
       const stageNames = (importStatus.stages || []).map((s) => s.name)
@@ -88,10 +102,22 @@ export function definePipelineTestSuite(config: PipelineSuiteConfig) {
         ])
       )
 
-      // 2. Download resulting DuckDB database extract
-      const duckDbBuffer = await etlClient.downloadDuckDb(
-        importStatus.presignedDuckDbUri
+      const discoverStage = (importStatus.stages || []).find(
+        (s) => s.name === 'discover'
       )
+      if (discoverStage && typeof discoverStage.itemCount === 'number') {
+        expect(
+          discoverStage.itemCount,
+          `ETL Discover stage found 0 matching files for ${datasetName}. The uploaded file was not picked up by the pipeline.`
+        ).toBeGreaterThan(0)
+      }
+
+      // 2. Download resulting DuckDB database extract
+      const downloadUri =
+        importStatus.presignedDuckDbUri ||
+        (importStatus as { downloadUrl?: string }).downloadUrl ||
+        (importStatus as { duckDbUri?: string }).duckDbUri
+      const duckDbBuffer = await etlClient.downloadDuckDb(downloadUri)
       await duckDbClient.openFromBuffer(duckDbBuffer)
 
       const rows = await duckDbClient.getTableRows(datasetName)
@@ -117,9 +143,11 @@ export function definePipelineTestSuite(config: PipelineSuiteConfig) {
         const importStatus = await etlClient.importDataset(datasetName)
         expect(importStatus.status).toBe('Succeeded')
 
-        const duckDbBuffer = await etlClient.downloadDuckDb(
-          importStatus.presignedDuckDbUri
-        )
+        const delta1DownloadUri =
+          importStatus.presignedDuckDbUri ||
+          (importStatus as { downloadUrl?: string }).downloadUrl ||
+          (importStatus as { duckDbUri?: string }).duckDbUri
+        const duckDbBuffer = await etlClient.downloadDuckDb(delta1DownloadUri)
         await duckDbClient.openFromBuffer(duckDbBuffer)
 
         const rows = await duckDbClient.getTableRows(datasetName)
@@ -147,9 +175,11 @@ export function definePipelineTestSuite(config: PipelineSuiteConfig) {
         const importStatus = await etlClient.importDataset(datasetName)
         expect(importStatus.status).toBe('Succeeded')
 
-        const duckDbBuffer = await etlClient.downloadDuckDb(
-          importStatus.presignedDuckDbUri
-        )
+        const delta2DownloadUri =
+          importStatus.presignedDuckDbUri ||
+          (importStatus as { downloadUrl?: string }).downloadUrl ||
+          (importStatus as { duckDbUri?: string }).duckDbUri
+        const duckDbBuffer = await etlClient.downloadDuckDb(delta2DownloadUri)
         await duckDbClient.openFromBuffer(duckDbBuffer)
 
         const rows = await duckDbClient.getTableRows(datasetName)
@@ -169,9 +199,11 @@ export function definePipelineTestSuite(config: PipelineSuiteConfig) {
       const importStatus = await etlClient.importDataset(datasetName)
       expect(importStatus.status).toBe('Succeeded')
 
-      const duckDbBuffer = await etlClient.downloadDuckDb(
-        importStatus.presignedDuckDbUri
-      )
+      const idemDownloadUri =
+        importStatus.presignedDuckDbUri ||
+        (importStatus as { downloadUrl?: string }).downloadUrl ||
+        (importStatus as { duckDbUri?: string }).duckDbUri
+      const duckDbBuffer = await etlClient.downloadDuckDb(idemDownloadUri)
       await duckDbClient.openFromBuffer(duckDbBuffer)
 
       const rows = await duckDbClient.getTableRows(datasetName)
