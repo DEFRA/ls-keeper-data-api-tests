@@ -1,6 +1,8 @@
 #!/bin/sh
 
 echo "run_id: $RUN_ID"
+echo "ENVIRONMENT: '$ENVIRONMENT'"
+echo "BASE_URL: '$BASE_URL'"
 npm test
 test_exit_code=$?
 

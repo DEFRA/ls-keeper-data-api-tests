@@ -74,7 +74,7 @@ export class EtlClient {
 
     expect(
       response.ok(),
-      `Storage purge failed with HTTP ${response.status()}: ${await response.text()}`
+      `Storage purge failed with HTTP ${response.status()} at [${response.url()}]: ${await response.text()}`
     ).toBeTruthy()
   }
 
@@ -106,7 +106,7 @@ export class EtlClient {
 
     expect(
       response.ok(),
-      `Upload failed with HTTP ${response.status()}: ${await response.text()}`
+      `Upload failed with HTTP ${response.status()} at [${response.url()}]: ${await response.text()}`
     ).toBeTruthy()
 
     return {
@@ -135,7 +135,7 @@ export class EtlClient {
 
     expect(
       response.ok(),
-      `Trigger import failed with HTTP ${response.status()}: ${await response.text()}`
+      `Trigger import failed with HTTP ${response.status()} at [${response.url()}]: ${await response.text()}`
     ).toBeTruthy()
 
     return response.json()
@@ -154,7 +154,7 @@ export class EtlClient {
 
     expect(
       response.ok(),
-      `Get import status failed with HTTP ${response.status()}: ${await response.text()}`
+      `Get import status failed with HTTP ${response.status()} at [${response.url()}]: ${await response.text()}`
     ).toBeTruthy()
 
     return response.json()
