@@ -8,10 +8,21 @@ const __dirname = path.dirname(__filename)
 
 dotenv.config({ path: path.resolve(__dirname, '.env') })
 
-const targetBaseUrl =
-  process.env.BASE_URL && !process.env.BASE_URL.includes('frontend')
-    ? process.env.BASE_URL
-    : `https://ls-keeper-data-bridge-backend.${process.env.ENVIRONMENT || 'dev'}.cdp-int.defra.cloud/`
+function resolveBaseUrl(): string {
+  if (
+    process.env.BASE_URL &&
+    (process.env.BASE_URL.includes('ls-keeper-data-bridge-backend') ||
+      process.env.BASE_URL.includes('localhost') ||
+      process.env.BASE_URL.includes('127.0.0.1'))
+  ) {
+    return process.env.BASE_URL.replace(/\/$/, '') + '/'
+  }
+
+  const env = (process.env.ENVIRONMENT || 'dev').toLowerCase()
+  return `https://ls-keeper-data-bridge-backend.${env}.cdp-int.defra.cloud/`
+}
+
+const targetBaseUrl = resolveBaseUrl()
 
 /**
  * See https://playwright.dev/docs/test-configuration.
