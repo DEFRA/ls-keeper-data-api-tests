@@ -30,7 +30,7 @@ export default defineConfig({
     /* Base URL to use in actions like `await page.goto('/')`. */
     baseURL: process.env.BASE_URL
       ? process.env.BASE_URL.replace(/\/$/, '') + '/'
-      : 'http://localhost:3000/',
+      : `https://ls-keeper-data-bridge-backend.${process.env.ENVIRONMENT || 'dev'}.cdp-int.defra.cloud/`,
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry'
