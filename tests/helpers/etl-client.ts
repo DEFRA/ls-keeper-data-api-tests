@@ -119,7 +119,7 @@ export class EtlClient {
    */
   async triggerImport(
     dataset?: string,
-    sourceType = 'internal'
+    sourceType: SourceType = 'external'
   ): Promise<ImportTriggerResponse> {
     const params: Record<string, string> = {}
     if (dataset) params.dataset = dataset
@@ -204,7 +204,7 @@ export class EtlClient {
     })
     expect(
       response.ok(),
-      `Failed to get latest DuckDB URL: HTTP ${response.status()}`
+      `Failed to get latest DuckDB URL: HTTP ${response.status()} at [${response.url()}]: ${await response.text()}`
     ).toBeTruthy()
     const json = (await response.json()) as { downloadUrl?: string }
     return json.downloadUrl || ''
@@ -223,7 +223,7 @@ export class EtlClient {
     const response = await this.request.get(url)
     expect(
       response.ok(),
-      `Failed to download DuckDB from S3: HTTP ${response.status()}`
+      `Failed to download DuckDB from S3: HTTP ${response.status()} at [${response.url()}]: ${await response.text()}`
     ).toBeTruthy()
     return response.body()
   }
@@ -233,7 +233,7 @@ export class EtlClient {
    */
   async importDataset(
     dataset?: string,
-    sourceType = 'internal',
+    sourceType: SourceType = 'external',
     timeout = 60000,
     interval = 2000
   ): Promise<ImportStatusResponse> {
