@@ -8,9 +8,10 @@ const __dirname = path.dirname(__filename)
 
 dotenv.config({ path: path.resolve(__dirname, '.env') })
 
-const targetBaseUrl = process.env.BASE_URL?.includes('ephemeral')
-  ? process.env.BASE_URL
-  : `https://ls-keeper-data-bridge-backend.${process.env.ENVIRONMENT}.cdp-int.defra.cloud/`
+const targetBaseUrl =
+  process.env.BASE_URL && !process.env.BASE_URL.includes('frontend')
+    ? process.env.BASE_URL
+    : `https://ls-keeper-data-bridge-backend.${process.env.ENVIRONMENT || 'dev'}.cdp-int.defra.cloud/`
 
 /**
  * See https://playwright.dev/docs/test-configuration.
