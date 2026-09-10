@@ -15,8 +15,13 @@ export interface PipelineSuiteConfig {
   primaryKey?: string
   dataDir?: string
   baselineFile: string
+  baselineFolder?: string
   delta1File?: string
+  delta1Folder?: string
   delta2File?: string
+  delta2Folder?: string
+  xsvnDeltaFile?: string
+  xsvnDeltaFolder?: string
   timeout?: number
 }
 
@@ -57,6 +62,9 @@ export function definePipelineTestSuite(config: PipelineSuiteConfig) {
     const delta2Records = config.delta2File
       ? parseCsvFile(path.join(dataDirectory, config.delta2File))
       : []
+    const xsvnDeltaRecords = config.xsvnDeltaFile
+      ? parseCsvFile(path.join(dataDirectory, config.xsvnDeltaFile))
+      : []
 
     // Test 1: Baseline Ingestion & Schema Verification
     test('should ingest baseline records with diverse edge cases and accurately verify DuckDB schema', async ({
@@ -64,9 +72,12 @@ export function definePipelineTestSuite(config: PipelineSuiteConfig) {
       duckDbClient
     }) => {
       const { encryptedFilename } = await etlClient.uploadFile(
-        config.baselineFile
+        config.baselineFile,
+        config.baselineFolder
       )
-      expect(encryptedFilename).toMatch(/^LITP_[A-Z0-9]+_\d+\.csv$/)
+      expect(encryptedFilename).toMatch(
+        /^(LITP|CT|CTSM|CADS)_[A-Za-z0-9_.-]+\.csv$/
+      )
 
       // 1. Run pipeline import
       const importStatus = await etlClient.importDataset(datasetName)
@@ -115,9 +126,12 @@ export function definePipelineTestSuite(config: PipelineSuiteConfig) {
         await new Promise((resolve) => setTimeout(resolve, 1500))
 
         const { encryptedFilename } = await etlClient.uploadFile(
-          config.delta1File!
+          config.delta1File!,
+          config.delta1Folder
         )
-        expect(encryptedFilename).toMatch(/^LITP_[A-Z0-9]+_\d+\.csv$/)
+        expect(encryptedFilename).toMatch(
+          /^(LITP|CT|CTSM|CADS)_[A-Za-z0-9_.-]+\.csv$/
+        )
 
         const importStatus = await etlClient.importDataset(datasetName)
         expect(importStatus.status).toBe('Succeeded')
@@ -145,9 +159,12 @@ export function definePipelineTestSuite(config: PipelineSuiteConfig) {
         await new Promise((resolve) => setTimeout(resolve, 1500))
 
         const { encryptedFilename } = await etlClient.uploadFile(
-          config.delta2File!
+          config.delta2File!,
+          config.delta2Folder
         )
-        expect(encryptedFilename).toMatch(/^LITP_[A-Z0-9]+_\d+\.csv$/)
+        expect(encryptedFilename).toMatch(
+          /^(LITP|CT|CTSM|CADS)_[A-Za-z0-9_.-]+\.csv$/
+        )
 
         const importStatus = await etlClient.importDataset(datasetName)
         expect(importStatus.status).toBe('Succeeded')
@@ -166,7 +183,51 @@ export function definePipelineTestSuite(config: PipelineSuiteConfig) {
       })
     }
 
-    // Test 4: Pipeline Idempotency and Table Stability
+    // Test 4: Upstream CADS .xsvn.csv double-extension ingestion (if xsvnDeltaFile supplied per LKPR-209)
+    if (config.xsvnDeltaFile) {
+      test('should discover, decrypt, and ingest upstream CADS files with .xsvn.csv double extension', async ({
+        etlClient,
+        duckDbClient
+      }) => {
+        await new Promise((resolve) => setTimeout(resolve, 1500))
+
+        const { encryptedFilename } = await etlClient.uploadFile(
+          config.xsvnDeltaFile!,
+          config.xsvnDeltaFolder
+        )
+        expect(encryptedFilename).toMatch(
+          /^(LITP|CT|CTSM|CADS)_[A-Za-z0-9_.-]+\.csv$/
+        )
+
+        const importStatus = await etlClient.importDataset(datasetName)
+        expect(importStatus.status).toBe('Succeeded')
+
+        const discoverStage = (importStatus.stages || []).find(
+          (s) => s.name === 'discover'
+        )
+        if (discoverStage && typeof discoverStage.itemCount === 'number') {
+          expect(discoverStage.itemCount).toBeGreaterThan(0)
+        }
+
+        const duckDbBuffer = await etlClient.downloadDuckDb(
+          importStatus.presignedDuckDbUri
+        )
+        await duckDbClient.openFromBuffer(duckDbBuffer)
+
+        const rows = await duckDbClient.getTableRows(datasetName)
+        expect(rows).toMatchRecords(baselineRecords, {
+          dataset: datasetName,
+          primaryKey: config.primaryKey,
+          deltas: [
+            ...(config.delta1File ? [delta1Records] : []),
+            ...(config.delta2File ? [delta2Records] : []),
+            xsvnDeltaRecords
+          ]
+        })
+      })
+    }
+
+    // Pipeline Idempotency and Table Stability
     test('should ensure pipeline idempotency and table stability upon repeated trigger executions', async ({
       etlClient,
       duckDbClient
@@ -183,7 +244,8 @@ export function definePipelineTestSuite(config: PipelineSuiteConfig) {
 
       const activeDeltas = [
         ...(config.delta1File ? [delta1Records] : []),
-        ...(config.delta2File ? [delta2Records] : [])
+        ...(config.delta2File ? [delta2Records] : []),
+        ...(config.xsvnDeltaFile ? [xsvnDeltaRecords] : [])
       ]
 
       expect(rows).toMatchRecords(baselineRecords, {

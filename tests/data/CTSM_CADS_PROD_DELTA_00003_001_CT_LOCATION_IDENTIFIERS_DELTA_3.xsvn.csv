@@ -1,0 +1,5 @@
+H|CTSM_CADS_PROD_DELTA_00003_001_CT_LOCATION_IDENTIFIERS_DELTA_3.xsvn.csv|01012025 12:00:00
+C|RECORD_TYPE|RECORD_COUNT|LID_AUD_ID|LID_AUD_TYPE        |LID_AUD_DATETIME|LID_ID  |LID_LOC_ID|LID_EFFECTIVE_FROM_DATE|LID_IDENTIFIER|LID_FULL_IDENTIFIER|LID_SUB_IDENTIFIER|LID_EFFECTIVE_TO_DATE|LID_CURRENT_STATUS|LID_CURRENT_MODIFIED_DATE|LID_CURRENT_USER|LID_CURRENT_PID|LID_CURRENT_AMEND_REASON|LID_VERSION
+D|1          |701920      |U         |26-AUG-2026 09:00:00|11867620        |25940996|25-AUG-26 |09/175/0304            |AH-09/175/0304|                   |                  |2                    |26-AUG-26         |m173969                  |29              |               |2                       
+D|2          |701925      |I         |26-AUG-2026 09:30:00|11867650        |25941050|26-AUG-26 |55/999/1234            |AH-55/999/1234|                   |                  |1                    |26-AUG-26         |m169953                  |29              |               |1                       
+T|CTSM_CADS_PROD_DELTA_00003_001_CT_LOCATION_IDENTIFIERS_DELTA_3.xsvn.csv|01012025 12:00:00|2

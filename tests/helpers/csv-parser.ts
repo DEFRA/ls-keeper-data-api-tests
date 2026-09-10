@@ -6,10 +6,22 @@ import { parse } from 'csv-parse/sync'
  */
 export function parseCsvFile<T = Record<string, string>>(
   filePath: string,
-  delimiter = '|'
+  delimiter?: string
 ): T[] {
   const content = fs.readFileSync(filePath, 'utf8')
-  return parsePsvOrCsv<T>(content, delimiter)
+  const firstLine = content.split(/\r?\n/)[0] || ''
+  const resolvedDelimiter = delimiter || (firstLine.includes('|') ? '|' : ',')
+  if (firstLine.startsWith('H|') || firstLine.startsWith('H,')) {
+    const hcdt = parseHcdt(content, resolvedDelimiter)
+    return hcdt.dataRows.map((row) => {
+      const record: Record<string, string> = {}
+      hcdt.columns.forEach((col, idx) => {
+        record[col] = String(row[idx] ?? '').trim()
+      })
+      return record as T
+    })
+  }
+  return parsePsvOrCsv<T>(content, resolvedDelimiter)
 }
 
 /**

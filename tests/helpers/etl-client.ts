@@ -86,15 +86,20 @@ export class EtlClient {
   }
 
   /**
-   * Resolves a raw data file from tests/data, encrypts it in memory, and uploads it
+   * Resolves a raw data file from tests/data, encrypts it in memory, and uploads it to S3
    */
-  async uploadFile(fileName: string): Promise<{ encryptedFilename: string }> {
+  async uploadFile(
+    fileName: string,
+    _s3Folder?: string
+  ): Promise<{ encryptedFilename: string; objectKey: string }> {
     const filePath = path.resolve(this.dataDir, fileName)
     const { filename, buffer } = prepareEncryptedFile(filePath)
 
+    const objectKey = filename
+
     const response = await this.request.post('api/ExternalCatalogue/upload', {
       headers: this.getHeaders(),
-      params: { objectKey: filename },
+      params: { objectKey },
       multipart: {
         File: {
           name: filename,
@@ -110,7 +115,8 @@ export class EtlClient {
     ).toBeTruthy()
 
     return {
-      encryptedFilename: filename
+      encryptedFilename: filename,
+      objectKey
     }
   }
 
