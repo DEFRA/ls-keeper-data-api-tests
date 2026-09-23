@@ -1,7 +1,11 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
-import { APIRequestContext, expect } from '@playwright/test'
-import { prepareEncryptedFile } from './file-processor.js'
+import { APIRequestContext, APIResponse, expect } from '@playwright/test'
+import {
+  prepareEncryptedFile,
+  prepareEncryptedFileWithOmittedColumn
+} from './file-processor.js'
+import { resolveBridgeBaseUrl } from './url-resolver.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -47,10 +51,41 @@ export interface PurgeStorageOptions {
 export class EtlClient {
   constructor(
     private request: APIRequestContext,
-    private apiKey = process.env.API_KEY || '',
-    private authorizationKey = process.env.AUTHORIZATION_KEY || '',
+    private baseUrl = resolveBridgeBaseUrl(),
+    private apiKey = process.env.GATEWAY_API_KEY || process.env.API_KEY || '',
+    private authorizationKey = process.env.DATA_BRIDGE_API_KEY ||
+      process.env.AUTHORIZATION_KEY ||
+      '',
     private dataDir = path.resolve(__dirname, '../data')
   ) {}
+
+  private resolveUrl(path: string): string {
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      return path
+    }
+    return `${this.baseUrl}${path.replace(/^\//, '')}`
+  }
+
+  get(
+    path: string,
+    options?: Parameters<APIRequestContext['get']>[1]
+  ): Promise<APIResponse> {
+    return this.request.get(this.resolveUrl(path), options)
+  }
+
+  post(
+    path: string,
+    options?: Parameters<APIRequestContext['post']>[1]
+  ): Promise<APIResponse> {
+    return this.request.post(this.resolveUrl(path), options)
+  }
+
+  delete(
+    path: string,
+    options?: Parameters<APIRequestContext['delete']>[1]
+  ): Promise<APIResponse> {
+    return this.request.delete(this.resolveUrl(path), options)
+  }
 
   private getHeaders(): Record<string, string> {
     return {
@@ -67,7 +102,7 @@ export class EtlClient {
     const params: Record<string, string> = { dataset, stage }
     if (sourceType) params.sourceType = sourceType
 
-    const response = await this.request.delete('api/etl/storage', {
+    const response = await this.delete('api/etl/storage', {
       headers: this.getHeaders(),
       params
     })
@@ -97,7 +132,7 @@ export class EtlClient {
 
     const objectKey = filename
 
-    const response = await this.request.post('api/ExternalCatalogue/upload', {
+    const response = await this.post('api/ExternalCatalogue/upload', {
       headers: this.getHeaders(),
       params: { objectKey },
       multipart: {
@@ -121,6 +156,48 @@ export class EtlClient {
   }
 
   /**
+   * Encrypts and uploads a delta file with one non-mandatory column omitted for schema evolution testing
+   */
+  async uploadFileWithOmittedColumn(
+    fileName: string,
+    columnToOmit: string,
+    _s3Folder?: string
+  ): Promise<{
+    encryptedFilename: string
+    objectKey: string
+    omittedColumn: string
+  }> {
+    const filePath = path.resolve(this.dataDir, fileName)
+    const { filename, buffer, omittedColumn } =
+      prepareEncryptedFileWithOmittedColumn(filePath, columnToOmit)
+
+    const objectKey = filename
+
+    const response = await this.post('api/ExternalCatalogue/upload', {
+      headers: this.getHeaders(),
+      params: { objectKey },
+      multipart: {
+        File: {
+          name: filename,
+          mimeType: 'application/octet-stream',
+          buffer
+        }
+      }
+    })
+
+    expect(
+      response.ok(),
+      `Upload of omitted-column delta failed with HTTP ${response.status()} at [${response.url()}]: ${await response.text()}`
+    ).toBeTruthy()
+
+    return {
+      encryptedFilename: filename,
+      objectKey,
+      omittedColumn
+    }
+  }
+
+  /**
    * Triggers the file-based ETL pipeline (POST /api/etl/imports)
    */
   async triggerImport(
@@ -132,7 +209,7 @@ export class EtlClient {
     if (dataset) params.dataset = dataset
     if (sourceType) params.sourceType = sourceType
 
-    const response = await this.request.post('api/etl/imports', {
+    const response = await this.post('api/etl/imports', {
       headers: {
         ...this.getHeaders(),
         'Content-Type': 'application/json'
@@ -152,7 +229,7 @@ export class EtlClient {
    * Retrieves status of an import by importId (GET /api/etl/imports/{importId})
    */
   async getImportStatus(importId: string): Promise<ImportStatusResponse> {
-    const response = await this.request.get(
+    const response = await this.get(
       `api/etl/imports/${encodeURIComponent(importId)}`,
       {
         headers: this.getHeaders()
@@ -216,7 +293,7 @@ export class EtlClient {
    * Retrieves the latest presigned DuckDB download URL from the backend
    */
   async getLatestDuckDbUrl(): Promise<string> {
-    const response = await this.request.get('api/etl/staging/duckdb/latest', {
+    const response = await this.get('api/etl/staging/duckdb/latest', {
       headers: this.getHeaders()
     })
     expect(
@@ -237,7 +314,7 @@ export class EtlClient {
       'Cannot download DuckDB database: download URL is undefined or empty'
     ).toBeTruthy()
 
-    const response = await this.request.get(url)
+    const response = await this.get(url)
     expect(
       response.ok(),
       `Failed to download DuckDB from S3: HTTP ${response.status()} at [${response.url()}]: ${await response.text()}`

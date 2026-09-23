@@ -143,7 +143,7 @@ The pipeline operates in two modes configured per dataset definition:
 
 ## 5. Re-usable 4-Stage Test Suite Architecture
 
-Every dataset in KRDS is tested using the generic, high-speed test suite factory [`pipeline-test-suite.factory.ts`](tests/fixtures/pipeline-test-suite.factory.ts). It executes an incremental 4-stage lifecycle in `test.describe.serial`:
+Every dataset in KRDS is tested using the generic, high-speed test suite factory [`pipeline-test-suite.factory.ts`](tests/helpers/pipeline-test-suite.factory.ts). It executes an incremental 4-stage lifecycle in `test.describe.serial`:
 
 ```mermaid
 flowchart LR
@@ -165,17 +165,18 @@ flowchart LR
 
 ## 6. Active Dataset Test Suite Matrix
 
-The test framework currently maintains automated test suites and baseline/delta fixtures for the following 7 Defra KRDS datasets:
+The test framework currently maintains automated test suites and baseline/delta fixtures for the following 8 Defra KRDS datasets:
 
-| Spec File                                                            | Dataset Identifier  | Display Name      | Primary Key | Fixture Files                    |
-| :------------------------------------------------------------------- | :------------------ | :---------------- | :---------- | :------------------------------- |
-| [`sam-showground.spec.ts`](tests/specs/sam-showground.spec.ts)       | `sam_showground`    | SAM Showground    | `CPH`       | `BASELINE`, `DELTA_1`, `DELTA_2` |
-| [`sam-cph-holdings.spec.ts`](tests/specs/sam-cph-holdings.spec.ts)   | `sam_cph_holdings`  | SAM CPH Holdings  | `CPH`       | `BASELINE`, `DELTA_1`, `DELTA_2` |
-| [`sam-cph-holder.spec.ts`](tests/specs/sam-cph-holder.spec.ts)       | `sam_cph_holder`    | SAM CPH Holder    | `PARTY_ID`  | `BASELINE`, `DELTA_1`, `DELTA_2` |
-| [`sam-herd.spec.ts`](tests/specs/sam-herd.spec.ts)                   | `sam_herd`          | SAM Herd          | `CPH`       | `BASELINE`, `DELTA_1`, `DELTA_2` |
-| [`sam-party.spec.ts`](tests/specs/sam-party.spec.ts)                 | `sam_party`         | SAM Party         | `PARTY_ID`  | `BASELINE`, `DELTA_1`, `DELTA_2` |
-| [`amls2-port.spec.ts`](tests/specs/amls2-port.spec.ts)               | `amls2_port`        | AMLS2 Port        | `CPH`       | `BASELINE`, `DELTA_1`, `DELTA_2` |
-| [`amls2-common-land.spec.ts`](tests/specs/amls2-common-land.spec.ts) | `amls2_common_land` | AMLS2 Common Land | `CPH`       | `BASELINE`, `DELTA_1`, `DELTA_2` |
+| Spec File                                                                                 | Dataset Identifier         | Display Name             | Primary Key | Fixture Files                               |
+| :---------------------------------------------------------------------------------------- | :------------------------- | :----------------------- | :---------- | :------------------------------------------ |
+| [`sam-showground.spec.ts`](tests/specs/bridge/sam-showground.spec.ts)                     | `sam_showground`           | SAM Showground           | `CPH`       | `BASELINE`, `DELTA_1`, `DELTA_2`            |
+| [`sam-cph-holdings.spec.ts`](tests/specs/bridge/sam-cph-holdings.spec.ts)                 | `sam_cph_holdings`         | SAM CPH Holdings         | `CPH`       | `BASELINE`, `DELTA_1`, `DELTA_2`            |
+| [`sam-cph-holder.spec.ts`](tests/specs/bridge/sam-cph-holder.spec.ts)                     | `sam_cph_holder`           | SAM CPH Holder           | `PARTY_ID`  | `BASELINE`, `DELTA_1`, `DELTA_2`            |
+| [`sam-herd.spec.ts`](tests/specs/bridge/sam-herd.spec.ts)                                 | `sam_herd`                 | SAM Herd                 | `HERDMARK`  | `BASELINE`, `DELTA_1`, `DELTA_2`            |
+| [`sam-party.spec.ts`](tests/specs/bridge/sam-party.spec.ts)                               | `sam_party`                | SAM Party                | `PARTY_ID`  | `BASELINE`, `DELTA_1`, `DELTA_2`            |
+| [`amls2-port.spec.ts`](tests/specs/bridge/amls2-port.spec.ts)                             | `amls2_port`               | AMLS2 Port               | `CPH`       | `BASELINE`, `DELTA_1`, `DELTA_2`            |
+| [`amls2-common-land.spec.ts`](tests/specs/bridge/amls2-common-land.spec.ts)               | `amls2_common_land`        | AMLS2 Common Land        | `CPH`       | `BASELINE`, `DELTA_1`, `DELTA_2`            |
+| [`cts-location-identifiers.spec.ts`](tests/specs/bridge/cts-location-identifiers.spec.ts) | `cts_location_identifiers` | CTS Location Identifiers | `LID_ID`    | `BASELINE`, `DELTA_1`, `DELTA_2`, `DELTA_3` |
 
 ---
 
@@ -185,13 +186,26 @@ The test framework currently maintains automated test suites and baseline/delta 
 tests/
 ├── data/                                 # Encrypted CSV/PSV baseline and delta fixtures
 ├── fixtures/
-│   ├── etl-pipeline.fixture.ts           # Playwright custom fixtures (etlClient, duckDbClient)
-│   ├── pipeline-test-suite.factory.ts    # Reusable 4-stage sequential test suite generator
-│   └── record-matcher.ts                 # Custom Playwright matcher (expect(rows).toMatchRecords)
+│   └── base.fixture.ts                   # Playwright custom fixtures (etlClient, duckDbClient, apiClient)
 ├── helpers/
 │   ├── csv-parser.ts                     # Robust RFC4180 and PSV parser for input CSV files
 │   ├── duckdb-client.ts                  # In-memory DuckDB client to open and query exported buffers
 │   ├── etl-client.ts                     # API client for uploads, triggers, polling, and purges
-│   └── file-processor.ts                 # AES-256-ECB file encryption and password derivation
-└── specs/                                # Dataset-specific test specifications
+│   ├── file-processor.ts                 # AES-256-ECB file encryption and password derivation
+│   ├── krds-client.ts                    # REST API client for Keeper Data Consumer endpoints
+│   ├── pipeline-test-suite.factory.ts    # Reusable multi-stage sequential test suite generator
+│   ├── record-matcher.ts                 # Custom Playwright matcher (expect(rows).toMatchRecords)
+│   └── url-resolver.ts                   # Environment URL and credential resolution
+└── specs/
+    ├── api/                              # Keeper Data Consumer API endpoint specifications
+    │   └── cph-associations.spec.ts
+    └── bridge/                           # Data Bridge ETL pipeline dataset specifications
+        ├── amls2-common-land.spec.ts
+        ├── amls2-port.spec.ts
+        ├── cts-location-identifiers.spec.ts
+        ├── sam-cph-holder.spec.ts
+        ├── sam-cph-holdings.spec.ts
+        ├── sam-herd.spec.ts
+        ├── sam-party.spec.ts
+        └── sam-showground.spec.ts
 ```

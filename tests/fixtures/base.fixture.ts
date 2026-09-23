@@ -2,17 +2,22 @@
 import { test as base, expect } from '@playwright/test'
 import { EtlClient } from '../helpers/etl-client.js'
 import { DuckDbClient } from '../helpers/duckdb-client.js'
-import './record-matcher.js'
+import { KrdsApiClient } from '../helpers/krds-client.js'
+import '../helpers/record-matcher.js'
 
-export interface EtlFixtures {
+export interface TestFixtures {
   etlClient: EtlClient
+  apiClient: KrdsApiClient
   duckDbClient: DuckDbClient
 }
 
-export const test = base.extend<EtlFixtures>({
+export const test = base.extend<TestFixtures>({
   etlClient: async ({ request }, use) => {
-    const client = new EtlClient(request)
-    await use(client)
+    await use(new EtlClient(request))
+  },
+
+  apiClient: async ({ request }, use) => {
+    await use(new KrdsApiClient(request))
   },
 
   duckDbClient: async ({}, use) => {

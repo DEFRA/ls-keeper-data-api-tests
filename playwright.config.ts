@@ -8,22 +8,6 @@ const __dirname = path.dirname(__filename)
 
 dotenv.config({ path: path.resolve(__dirname, '.env') })
 
-function resolveBaseUrl(): string {
-  if (
-    process.env.BASE_URL &&
-    (process.env.BASE_URL.includes('ls-keeper-data-bridge-backend') ||
-      process.env.BASE_URL.includes('localhost') ||
-      process.env.BASE_URL.includes('127.0.0.1'))
-  ) {
-    return process.env.BASE_URL.replace(/\/$/, '') + '/'
-  }
-
-  const env = (process.env.ENVIRONMENT || 'dev').toLowerCase()
-  return `https://ls-keeper-data-bridge-backend.${env}.cdp-int.defra.cloud/`
-}
-
-const targetBaseUrl = resolveBaseUrl()
-
 /**
  * See https://playwright.dev/docs/test-configuration.
  */
@@ -41,12 +25,19 @@ export default defineConfig({
   workers: 1,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: [['html', { outputFolder: 'playwright-report', open: 'never' }]],
-  /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
+  /* Shared default settings */
   use: {
-    /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL: targetBaseUrl,
-
-    /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry'
-  }
+  },
+  /* Logical separation of test projects */
+  projects: [
+    {
+      name: 'bridge-etl',
+      testDir: './tests/specs/bridge'
+    },
+    {
+      name: 'krds-api',
+      testDir: './tests/specs/api'
+    }
+  ]
 })

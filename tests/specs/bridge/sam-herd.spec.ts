@@ -1,4 +1,4 @@
-import { definePipelineTestSuite } from '../fixtures/pipeline-test-suite.factory.js'
+import { definePipelineTestSuite } from '../../helpers/pipeline-test-suite.factory.js'
 
 definePipelineTestSuite({
   dataset: 'sam_herd',

@@ -14,6 +14,8 @@
   "scripts": {
     "clean": "rm -rf playwright-report && rm -rf test-results",
     "test": "playwright test",
+    "test:bridge": "playwright test --project=bridge-etl",
+    "test:api": "playwright test --project=krds-api",
     "test:ui": "playwright test --ui",
     "test:debug": "playwright test --debug",
     "test:github": "playwright test",

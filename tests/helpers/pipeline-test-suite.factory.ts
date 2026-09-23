@@ -1,7 +1,7 @@
-import { test, expect } from './etl-pipeline.fixture.js'
-import { parseCsvFile } from '../helpers/csv-parser.js'
+import { test, expect } from '../fixtures/base.fixture.js'
+import { parseCsvFile } from './csv-parser.js'
 import { DATASET_PRIMARY_KEYS } from './record-matcher.js'
-import { EtlClient } from '../helpers/etl-client.js'
+import { EtlClient } from './etl-client.js'
 import path from 'path'
 import { fileURLToPath } from 'url'
 
@@ -22,7 +22,22 @@ export interface PipelineSuiteConfig {
   delta2Folder?: string
   xsvnDeltaFile?: string
   xsvnDeltaFolder?: string
+  omittedColumn?: string
   timeout?: number
+}
+
+/**
+ * Default non-mandatory columns to omit per dataset for graceful schema evolution testing.
+ */
+export const DEFAULT_OMITTED_COLUMNS: Record<string, string> = {
+  sam_showground: 'LOCALITY',
+  sam_cph_holdings: 'LOCALITY',
+  sam_party: 'TELEPHONE_NUMBER',
+  sam_herd: 'INTERVALS',
+  sam_cph_holder: 'SAON_START_NUMBER',
+  amls2_common_land: 'ADDRESS_LINE_2',
+  amls2_port: 'ADDRESS_LINE_2',
+  cts_location_identifiers: 'LID_SUB_IDENTIFIER'
 }
 
 /**
@@ -265,12 +280,66 @@ export function definePipelineTestSuite(config: PipelineSuiteConfig) {
       expect(rows.length).toBeGreaterThanOrEqual(uniqueKeys.size)
     })
 
-    // --- Phase II Planned Feature: Graceful Schema Evolution (Skipped pending backend implementation) ---
-    test.skip('should gracefully tolerate omitted columns in delta files by projecting nulls and recording warning telemetry', async () => {
-      // Pending Phase II backend implementation:
-      // When a non-mandatory column disappears from a delta CSV during the delta walk,
-      // the pipeline should succeed, project null for that column in DuckDB, and log a warning.
-    })
+    // --- Phase II: Graceful Schema Evolution (Omitted Delta Columns) ---
+    // Graceful Schema Evolution (Omitted Delta Columns)
+    if (config.delta1File) {
+      test('should gracefully tolerate omitted columns in delta files by projecting nulls and maintaining table consistency', async ({
+        etlClient,
+        duckDbClient
+      }) => {
+        const columnToOmit =
+          config.omittedColumn || DEFAULT_OMITTED_COLUMNS[datasetName]
+        expect(
+          columnToOmit,
+          `No omitted column defined for dataset ${datasetName}`
+        ).toBeTruthy()
+
+        await new Promise((resolve) => setTimeout(resolve, 1500))
+
+        const { encryptedFilename } =
+          await etlClient.uploadFileWithOmittedColumn(
+            config.delta1File!,
+            columnToOmit!,
+            config.delta1Folder
+          )
+        expect(encryptedFilename).toMatch(
+          /^(LITP|CT|CTSM|CADS)_[A-Za-z0-9_.-]+\.csv$/
+        )
+
+        const importStatus = await etlClient.importDataset(datasetName)
+        expect(importStatus.status).toBe('Succeeded')
+
+        const stageNames = (importStatus.stages || []).map((s) => s.name)
+        expect(stageNames).toEqual(
+          expect.arrayContaining([
+            'discover',
+            'decrypt',
+            'normalise',
+            'snapshot',
+            'load-duckdb'
+          ])
+        )
+
+        const duckDbBuffer = await etlClient.downloadDuckDb(
+          importStatus.presignedDuckDbUri
+        )
+        await duckDbClient.openFromBuffer(duckDbBuffer)
+
+        const rows = await duckDbClient.getTableRows(datasetName)
+        expect(rows.length).toBeGreaterThan(0)
+
+        const hasNullOrEmpty = rows.some(
+          (r) =>
+            r[columnToOmit!] === null ||
+            r[columnToOmit!] === undefined ||
+            r[columnToOmit!] === ''
+        )
+        expect(
+          hasNullOrEmpty,
+          `Expected omitted column ${columnToOmit} to be projected as null or empty in DuckDB for dataset ${datasetName}`
+        ).toBe(true)
+      })
+    }
 
     // =========================================================================================
     // --- Phase II: Negative & Resilience Test Scenarios (Deferred pending LKPR-127 & LKPR-128) ---

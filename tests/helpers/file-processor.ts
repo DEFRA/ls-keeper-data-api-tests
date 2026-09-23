@@ -10,9 +10,13 @@ import crypto from 'crypto'
 export function prepareEncryptedFile(
   filePath: string,
   salt = process.env.DECRYPTION_SALT || '',
-  customTimestamp?: string
+  customTimestamp?: string,
+  overrideContent?: string
 ): { filename: string; buffer: Buffer } {
-  const content = fs.readFileSync(filePath)
+  const content =
+    overrideContent !== undefined
+      ? Buffer.from(overrideContent, 'utf8')
+      : fs.readFileSync(filePath)
 
   // 1. Determine dataset family and format timestamp
   const now = new Date()
@@ -93,4 +97,67 @@ export function prepareEncryptedFile(
   const buffer = Buffer.concat([cipher.update(payloadBuffer), cipher.final()])
 
   return { filename, buffer }
+}
+
+/**
+ * Prepares and encrypts a CSV data file with one non-mandatory column omitted.
+ * Used for testing graceful schema evolution (Phase II).
+ * Used for testing graceful schema evolution.
+ */
+export function prepareEncryptedFileWithOmittedColumn(
+  filePath: string,
+  columnToOmit: string,
+  salt = process.env.DECRYPTION_SALT || '',
+  customTimestamp?: string
+): { filename: string; buffer: Buffer; omittedColumn: string } {
+  const rawContent = fs.readFileSync(filePath, 'utf8')
+  const delim = rawContent.includes('|') ? '|' : ','
+  const lines = rawContent.split(/\r?\n/).filter((l) => l.trim().length > 0)
+
+  let evolvedText = rawContent
+  if (lines[0].startsWith('H' + delim)) {
+    // HCDT envelope
+    const cIdx = lines.findIndex((l) => l.startsWith('C' + delim))
+    if (cIdx !== -1) {
+      const cCells = lines[cIdx].split(delim).map((c) => c.trim())
+      const targetColIdx = cCells.indexOf(columnToOmit)
+      if (targetColIdx !== -1) {
+        const evolvedLines = lines.map((line) => {
+          if (line.startsWith('C' + delim)) {
+            return line
+              .split(delim)
+              .filter((_, i) => i !== targetColIdx)
+              .join(delim)
+          }
+          if (line.startsWith('D' + delim)) {
+            const dCells = line.split(delim).map((c) => c.trim())
+            const dColIdx =
+              dCells.length === cCells.length ? targetColIdx : targetColIdx - 1
+            return dCells.filter((_, i) => i !== dColIdx).join(delim)
+          }
+          return line
+        })
+        evolvedText = evolvedLines.join('\n') + '\n'
+      }
+    }
+  } else {
+    // Standard PSV / CSV
+    const headerCells = lines[0].split(delim).map((c) => c.trim())
+    const targetColIdx = headerCells.indexOf(columnToOmit)
+    if (targetColIdx !== -1) {
+      const evolvedLines = lines.map((line) => {
+        const cells = line.split(delim).map((c) => c.trim())
+        return cells.filter((_, i) => i !== targetColIdx).join(delim)
+      })
+      evolvedText = evolvedLines.join('\n') + '\n'
+    }
+  }
+
+  const { filename, buffer } = prepareEncryptedFile(
+    filePath,
+    salt,
+    customTimestamp,
+    evolvedText
+  )
+  return { filename, buffer, omittedColumn: columnToOmit }
 }

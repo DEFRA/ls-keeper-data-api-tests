@@ -1,0 +1,18 @@
+H|CTSM_CADS_PROD_BULK_00001_001_CT_ADDRESSES_BASELINE.csv|01012025 12:00:00
+C|RECORD_TYPE|RECORD_COUNT|ADR_ID  |ADR_LOC_ID|ADR_PAR_ID|ADR_NAME |ADR_ADDRESS_2|ADR_ADDRESS_3|ADR_ADDRESS_4|ADR_ADDRESS_5|ADR_POST_CODE|ADR_CURRENT_MODIFIED_DATE|ADR_CURRENT_STATUS|ADR_CURRENT_USER|ADR_CURRENT_PID|ADR_VERSION
+D|1          |700001      |1414957 |600001    |FARM 1    |FARM LANE|TEST TOWN    |             |             |SW1A 1AA     |01-JUL-96    |1                        |CTS_LOAD          |29              |1              
+D|2          |700002      |126127  |600002    |FARM 2    |FARM LANE|TEST TOWN    |             |             |SW1A 1AA     |01-JUL-96    |1                        |CTS_LOAD          |29              |1              
+D|3          |700003      |308856  |600003    |FARM 3    |FARM LANE|TEST TOWN    |             |             |SW1A 1AA     |01-JUL-96    |1                        |CTS_LOAD          |29              |1              
+D|4          |700004      |171839  |600004    |FARM 4    |FARM LANE|TEST TOWN    |             |             |SW1A 1AA     |01-JUL-96    |1                        |CTS_LOAD          |29              |1              
+D|5          |700005      |217777  |600005    |FARM 5    |FARM LANE|TEST TOWN    |             |             |SW1A 1AA     |01-JUL-96    |1                        |CTS_LOAD          |29              |1              
+D|6          |700006      |263336  |600006    |FARM 6    |FARM LANE|TEST TOWN    |             |             |SW1A 1AA     |01-JUL-96    |1                        |CTS_LOAD          |29              |1              
+D|7          |700007      |802340  |600007    |FARM 7    |FARM LANE|TEST TOWN    |             |             |SW1A 1AA     |01-JUL-96    |1                        |CTS_LOAD          |29              |1              
+D|8          |700008      |12600   |600008    |FARM 8    |FARM LANE|TEST TOWN    |             |             |SW1A 1AA     |01-JUL-96    |1                        |CTS_LOAD          |29              |1              
+D|9          |700009      |58393   |600009    |FARM 9    |FARM LANE|TEST TOWN    |             |             |SW1A 1AA     |01-JUL-96    |1                        |CTS_LOAD          |29              |1              
+D|10         |700010      |1414959 |600010    |FARM 10   |FARM LANE|TEST TOWN    |             |             |SW1A 1AA     |01-JUL-96    |1                        |CTS_LOAD          |29              |1              
+D|11         |700011      |25940883|600011    |FARM 11   |FARM LANE|TEST TOWN    |             |             |SW1A 1AA     |01-JUL-96    |1                        |CTS_LOAD          |29              |1              
+D|12         |700012      |25940887|600012    |FARM 12   |FARM LANE|TEST TOWN    |             |             |SW1A 1AA     |01-JUL-96    |1                        |CTS_LOAD          |29              |1              
+D|13         |700013      |25940891|600013    |FARM 13   |FARM LANE|TEST TOWN    |             |             |SW1A 1AA     |01-JUL-96    |1                        |CTS_LOAD          |29              |1              
+D|14         |700014      |25940996|600014    |FARM 14   |FARM LANE|TEST TOWN    |             |             |SW1A 1AA     |01-JUL-96    |1                        |CTS_LOAD          |29              |1              
+D|15         |700015      |25941050|600015    |FARM 15   |FARM LANE|TEST TOWN    |             |             |SW1A 1AA     |01-JUL-96    |1                        |CTS_LOAD          |29              |1              
+T|CTSM_CADS_PROD_BULK_00001_001_CT_ADDRESSES_BASELINE.csv|01012025 12:00:00|15
