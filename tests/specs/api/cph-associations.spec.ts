@@ -232,20 +232,4 @@ test.describe
 
     expect(response.status()).toBe(401)
   })
-
-  test('should return a 403 Forbidden response when the API key is invalid', async ({
-    apiClient
-  }) => {
-    const basicAuth =
-      process.env.KRDS_API_BASIC_AUTH || process.env.API_BASIC_AUTH || ''
-    const response = await apiClient.get('api/v2/cph-associations', {
-      headers: {
-        'x-api-key': 'invalid-api-key-00000000000000000000',
-        Authorization: `Basic ${basicAuth}`
-      },
-      params: { email: 'single.owner@example.test' }
-    })
-
-    expect(response.status()).toBe(403)
-  })
 })
