@@ -1,39 +1,13 @@
 import { test, expect } from '../../fixtures/base.fixture.js'
-import type { ApiErrorResponse } from '../../helpers/krds-client.js'
 
 test.describe
   .serial('KRDS API: GET /api/v2/cph-associations — User-role-CPH associations by email', () => {
   test.beforeAll(async ({ etlClient, apiClient }) => {
     test.setTimeout(180000)
 
-    // Upload CTS datasets
-    await etlClient.uploadFile(
-      'CTSM_CADS_PROD_BULK_00001_001_CT_COUNTIES_BASELINE.csv',
-      'cads/cts/bulk'
-    )
-    await etlClient.uploadFile(
-      'CTSM_CADS_PROD_BULK_00001_001_CT_LOCATIONS_BASELINE.csv',
-      'cads/cts/bulk'
-    )
-    await etlClient.uploadFile(
-      'CTSM_CADS_PROD_BULK_00001_001_CT_LOCATION_IDENTIFIERS_BASELINE.csv',
-      'cads/cts/bulk'
-    )
-    await etlClient.uploadFile(
-      'CTSM_CADS_PROD_BULK_00001_001_CT_LOCATION_PARTY_RELS_BASELINE.csv',
-      'cads/cts/bulk'
-    )
-    await etlClient.uploadFile(
-      'CTSM_CADS_PROD_BULK_00001_001_CT_PARTIES_BASELINE.csv',
-      'cads/cts/bulk'
-    )
-    await etlClient.uploadFile(
-      'CTSM_CADS_PROD_BULK_00001_001_CT_ADDRESSES_BASELINE.csv',
-      'cads/cts/bulk'
-    )
-
     // Upload SAM datasets
     await etlClient.uploadFile('LITP_SAMCPHHOLDING_BASELINE.csv')
+    await etlClient.uploadFile('LITP_SAMCPHHOLDER_BASELINE.csv')
     await etlClient.uploadFile('LITP_SAMPARTY_BASELINE.csv')
     await etlClient.uploadFile('LITP_SAMHERD_BASELINE.csv')
 
@@ -160,45 +134,21 @@ test.describe
     apiClient
   }) => {
     const response = await apiClient.getCphAssociations(undefined)
-
-    expect(response.status()).toBe(400)
-    const contentType = response.headers()['content-type'] || ''
-    expect(contentType).toMatch(/application\/(problem\+)?json/)
-
-    const errorResponse: ApiErrorResponse = await response.json()
-    expect(errorResponse.status).toBe(400)
-    expect(errorResponse.title).toBeTruthy()
-    expect(errorResponse.errors?.Email).toBeDefined()
+    await expect(response).toBeApiError(400, { field: 'Email' })
   })
 
   test('should return a 400 Bad Request API error response when the email parameter is empty', async ({
     apiClient
   }) => {
     const response = await apiClient.getCphAssociations('')
-
-    expect(response.status()).toBe(400)
-    const contentType = response.headers()['content-type'] || ''
-    expect(contentType).toMatch(/application\/(problem\+)?json/)
-
-    const errorResponse: ApiErrorResponse = await response.json()
-    expect(errorResponse.status).toBe(400)
-    expect(errorResponse.title).toBeTruthy()
-    expect(errorResponse.errors?.Email).toBeDefined()
+    await expect(response).toBeApiError(400, { field: 'Email' })
   })
 
   test('should return a 400 Bad Request API error response when the email parameter contains only whitespace', async ({
     apiClient
   }) => {
     const response = await apiClient.getCphAssociations('   ')
-
-    expect(response.status()).toBe(400)
-    const contentType = response.headers()['content-type'] || ''
-    expect(contentType).toMatch(/application\/(problem\+)?json/)
-
-    const errorResponse: ApiErrorResponse = await response.json()
-    expect(errorResponse.status).toBe(400)
-    expect(errorResponse.title).toBeTruthy()
-    expect(errorResponse.errors?.Email).toBeDefined()
+    await expect(response).toBeApiError(400, { field: 'Email' })
   })
 
   test('should return a 401 Unauthorized response when the Authorization header is missing', async ({

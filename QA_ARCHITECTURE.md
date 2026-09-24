@@ -192,13 +192,14 @@ tests/
 │   ├── duckdb-client.ts                  # In-memory DuckDB client to open and query exported buffers
 │   ├── etl-client.ts                     # API client for uploads, triggers, polling, and purges
 │   ├── file-processor.ts                 # AES-256-ECB file encryption and password derivation
-│   ├── krds-client.ts                    # REST API client for Keeper Data Consumer endpoints
+│   ├── api-matchers.ts                   # Custom Playwright matchers (toBeApiError, toBeIso8601Utc)
+│   ├── etl-matchers.ts                   # Custom Playwright matcher (expect(rows).toMatchRecords)
 │   ├── pipeline-test-suite.factory.ts    # Reusable multi-stage sequential test suite generator
-│   ├── record-matcher.ts                 # Custom Playwright matcher (expect(rows).toMatchRecords)
 │   └── url-resolver.ts                   # Environment URL and credential resolution
 └── specs/
     ├── api/                              # Keeper Data Consumer API endpoint specifications
-    │   └── cph-associations.spec.ts
+    │   ├── cph-associations.spec.ts
+    │   └── holding-detail.spec.ts
     └── bridge/                           # Data Bridge ETL pipeline dataset specifications
         ├── amls2-common-land.spec.ts
         ├── amls2-port.spec.ts

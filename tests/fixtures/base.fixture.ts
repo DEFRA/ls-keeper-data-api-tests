@@ -3,7 +3,8 @@ import { test as base, expect } from '@playwright/test'
 import { EtlClient } from '../helpers/etl-client.js'
 import { DuckDbClient } from '../helpers/duckdb-client.js'
 import { KrdsApiClient } from '../helpers/krds-client.js'
-import '../helpers/record-matcher.js'
+import '../helpers/etl-matchers.js'
+import '../helpers/api-matchers.js'
 
 export interface TestFixtures {
   etlClient: EtlClient

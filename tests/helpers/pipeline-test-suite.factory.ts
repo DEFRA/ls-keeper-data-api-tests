@@ -1,6 +1,6 @@
 import { test, expect } from '../fixtures/base.fixture.js'
 import { parseCsvFile } from './csv-parser.js'
-import { DATASET_PRIMARY_KEYS } from './record-matcher.js'
+import { DATASET_PRIMARY_KEYS } from './etl-matchers.js'
 import { EtlClient } from './etl-client.js'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -280,7 +280,6 @@ export function definePipelineTestSuite(config: PipelineSuiteConfig) {
       expect(rows.length).toBeGreaterThanOrEqual(uniqueKeys.size)
     })
 
-    // --- Phase II: Graceful Schema Evolution (Omitted Delta Columns) ---
     // Graceful Schema Evolution (Omitted Delta Columns)
     if (config.delta1File) {
       test('should gracefully tolerate omitted columns in delta files by projecting nulls and maintaining table consistency', async ({
@@ -342,7 +341,7 @@ export function definePipelineTestSuite(config: PipelineSuiteConfig) {
     }
 
     // =========================================================================================
-    // --- Phase II: Negative & Resilience Test Scenarios (Deferred pending LKPR-127 & LKPR-128) ---
+    // Future Resilience & Negative Test Scenarios (Deferred pending LKPR-127 & LKPR-128)
     // =========================================================================================
 
     // test('should fail import and quarantine file when mandatory schema columns are missing (LKPR-127)')

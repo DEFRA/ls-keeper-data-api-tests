@@ -16,6 +16,60 @@ export interface ApiErrorResponse {
   [key: string]: unknown
 }
 
+export interface HoldingAddress {
+  udprn: string | null
+  addressLine1: string | null
+  addressLine2: string | null
+  postTown: string | null
+  locality: string | null
+  postcode: string | null
+  country: string | null
+}
+
+export interface HoldingLocation {
+  osMapReference: string | null
+  easting: number | null
+  northing: number | null
+  address: HoldingAddress
+}
+
+export interface HoldingRole {
+  code: string
+  species: string[]
+}
+
+export interface HoldingAssociation {
+  customerNumber: string
+  title: string | null
+  firstName: string | null
+  lastName: string | null
+  name: string | null
+  partyType: string
+  email: string | null
+  mobile: string | null
+  telephone: string | null
+  roles: HoldingRole[]
+}
+
+export interface HoldingMark {
+  mark: string
+  startDate: string | null
+  endDate: string | null
+  species: string[]
+}
+
+export interface HoldingDetail {
+  identifier: string
+  holdingType: string | null
+  name: string | null
+  startDate: string | null
+  endDate: string | null
+  location: HoldingLocation
+  associations: HoldingAssociation[]
+  allowedSpecies: string[]
+  marks: HoldingMark[]
+}
+
 export interface KrdsRequestOptions {
   headers?: Record<string, string>
   params?: Record<string, string>
@@ -95,6 +149,55 @@ export class KrdsApiClient {
     expect(
       response.ok(),
       `GET cph-associations failed with HTTP ${response.status()} at [${response.url()}]: ${await response.text()}`
+    ).toBeTruthy()
+    return response.json()
+  }
+
+  /**
+   * GET /api/v2/holdings/{county}/{parish}/{holding}
+   * Retrieves holding details for a CPH by its county, parish, and holding segments.
+   */
+  async getHolding(
+    county: string,
+    parish: string,
+    holding: string,
+    options: KrdsRequestOptions = {}
+  ): Promise<APIResponse> {
+    return this.get(`api/v2/holdings/${county}/${parish}/${holding}`, {
+      headers: this.getHeaders(options.headers),
+      params: options.params
+    })
+  }
+
+  /**
+   * Convenience helper to query holding by CPH string (e.g. "13/169/0007")
+   */
+  async getHoldingByCph(
+    cph: string,
+    options: KrdsRequestOptions = {}
+  ): Promise<APIResponse> {
+    const parts = cph.split('/')
+    if (parts.length !== 3) {
+      return this.get(`api/v2/holdings/${cph}`, {
+        headers: this.getHeaders(options.headers),
+        params: options.params
+      })
+    }
+    return this.getHolding(parts[0], parts[1], parts[2], options)
+  }
+
+  /**
+   * Helper that retrieves holding details and asserts HTTP 200 OK, returning the parsed payload.
+   */
+  async getHoldingData(
+    county: string,
+    parish: string,
+    holding: string
+  ): Promise<HoldingDetail> {
+    const response = await this.getHolding(county, parish, holding)
+    expect(
+      response.ok(),
+      `GET holding failed with HTTP ${response.status()} at [${response.url()}]: ${await response.text()}`
     ).toBeTruthy()
     return response.json()
   }
