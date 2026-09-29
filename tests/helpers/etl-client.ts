@@ -125,10 +125,16 @@ export class EtlClient {
    */
   async uploadFile(
     fileName: string,
-    _s3Folder?: string
+    _s3Folder?: string,
+    overrideContent?: string
   ): Promise<{ encryptedFilename: string; objectKey: string }> {
     const filePath = path.resolve(this.dataDir, fileName)
-    const { filename, buffer } = prepareEncryptedFile(filePath)
+    const { filename, buffer } = prepareEncryptedFile(
+      filePath,
+      undefined,
+      undefined,
+      overrideContent
+    )
 
     const objectKey = filename
 

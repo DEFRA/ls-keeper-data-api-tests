@@ -199,7 +199,8 @@ tests/
 └── specs/
     ├── api/                              # Keeper Data Consumer API endpoint specifications
     │   ├── cph-associations.spec.ts
-    │   └── holding-detail.spec.ts
+    │   ├── holding-detail.spec.ts
+    │   └── user-accounts.spec.ts
     └── bridge/                           # Data Bridge ETL pipeline dataset specifications
         ├── amls2-common-land.spec.ts
         ├── amls2-port.spec.ts

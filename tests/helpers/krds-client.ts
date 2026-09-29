@@ -70,6 +70,34 @@ export interface HoldingDetail {
   marks: HoldingMark[]
 }
 
+export interface EnsureUserAccountRequest {
+  sub?: string | null
+  email?: string | null
+  given_name?: string | null
+  family_name?: string | null
+}
+
+export interface UserAccountCphAssociation {
+  id?: string | null
+  cphNumber?: string | null
+  role?: string | null
+  partyId?: string | null
+  holdingId?: string | null
+  holdingName?: string | null
+}
+
+export interface UserAccountDto {
+  id?: string | null
+  subject?: string | null
+  email: string
+  firstName?: string | null
+  lastName?: string | null
+  displayName?: string | null
+  cphAssociations?: UserAccountCphAssociation[] | null
+  associationsRefreshedDate?: string | null
+  lastUpdatedDate: string
+}
+
 export interface KrdsRequestOptions {
   headers?: Record<string, string>
   params?: Record<string, string>
@@ -200,6 +228,39 @@ export class KrdsApiClient {
       `GET holding failed with HTTP ${response.status()} at [${response.url()}]: ${await response.text()}`
     ).toBeTruthy()
     return response.json()
+  }
+
+  /**
+   * POST /api/v2/user-accounts
+   * Ensures a user account exists, refreshing claims and rebuilding CPH associations.
+   */
+  async ensureUserAccount(
+    payload: EnsureUserAccountRequest,
+    options: KrdsRequestOptions = {}
+  ): Promise<APIResponse> {
+    const headers = {
+      ...this.getHeaders(options.headers),
+      'Content-Type': 'application/json'
+    }
+    return this.post('api/v2/user-accounts', {
+      headers,
+      data: payload,
+      params: options.params
+    })
+  }
+
+  /**
+   * GET /api/v2/user-accounts/{subject}
+   * Retrieves a user account by identity provider subject claim.
+   */
+  async getUserAccount(
+    subject: string,
+    options: KrdsRequestOptions = {}
+  ): Promise<APIResponse> {
+    return this.get(`api/v2/user-accounts/${encodeURIComponent(subject)}`, {
+      headers: this.getHeaders(options.headers),
+      params: options.params
+    })
   }
 
   /**
