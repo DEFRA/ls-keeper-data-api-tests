@@ -18,7 +18,7 @@ test.describe
     await apiClient.refreshSqliteCache('read-model', false)
   })
 
-  test('should return all associated CPHs for an email with registered owner associations', async ({
+  test('should return all associated CPHs for an email with registered owner or holder associations (LKPR-270)', async ({
     apiClient
   }) => {
     const response = await apiClient.getCphAssociations(
@@ -29,9 +29,13 @@ test.describe
     const data = await response.json()
 
     expect(Array.isArray(data)).toBe(true)
-    expect(data).toHaveLength(1)
-    expect(data[0].cph).toBe('37/004/0004')
-    expect(data[0].role).toBe('owner')
+    expect(data).toHaveLength(2)
+    expect(data).toEqual(
+      expect.arrayContaining([
+        { cph: '37/004/0004', role: 'owner' },
+        { cph: '37/005/0005', role: 'holder' }
+      ])
+    )
   })
 
   test('should return the union of CPHs when an email is linked to multiple party records', async ({
@@ -45,22 +49,22 @@ test.describe
     const data = await response.json()
 
     expect(Array.isArray(data)).toBe(true)
-    expect(data).toHaveLength(2)
+    expect(data).toHaveLength(3)
 
-    expect(data.map((item: { cph: string }) => item.cph)).toEqual([
-      '37/005/0005',
-      '37/006/0006'
-    ])
+    const uniqueCphs = [
+      ...new Set(data.map((item: { cph: string }) => item.cph))
+    ].sort()
+    expect(uniqueCphs).toEqual(['37/005/0005', '37/006/0006'])
 
     for (const item of data) {
-      expect(item.role).toBe('owner')
+      expect(['owner', 'holder']).toContain(item.role)
     }
   })
 
-  test('should return an empty list when an email has no owner associations', async ({
+  test('should return an empty list when an email has no owner or holder associations (LKPR-270)', async ({
     apiClient
   }) => {
-    // keeper.only@example.test is registered with role 'Keeper' only, not 'Owner'
+    // keeper.only@example.test is registered with role 'Keeper' only, not 'Owner' or 'Holder'
     const response = await apiClient.getCphAssociations(
       'keeper.only@example.test'
     )
@@ -96,9 +100,13 @@ test.describe
     expect(response.status()).toBe(200)
     const data = await response.json()
 
-    expect(data).toHaveLength(1)
-    expect(data[0].cph).toBe('37/004/0004')
-    expect(data[0].role).toBe('owner')
+    expect(data).toHaveLength(2)
+    expect(data).toEqual(
+      expect.arrayContaining([
+        { cph: '37/004/0004', role: 'owner' },
+        { cph: '37/005/0005', role: 'holder' }
+      ])
+    )
   })
 
   test('should trim surrounding whitespace from the email query parameter', async ({
@@ -111,9 +119,13 @@ test.describe
     expect(response.status()).toBe(200)
     const data = await response.json()
 
-    expect(data).toHaveLength(1)
-    expect(data[0].cph).toBe('37/004/0004')
-    expect(data[0].role).toBe('owner')
+    expect(data).toHaveLength(2)
+    expect(data).toEqual(
+      expect.arrayContaining([
+        { cph: '37/004/0004', role: 'owner' },
+        { cph: '37/005/0005', role: 'holder' }
+      ])
+    )
   })
 
   test('should handle URI-encoded email addresses containing special characters such as plus-addressing', async ({
