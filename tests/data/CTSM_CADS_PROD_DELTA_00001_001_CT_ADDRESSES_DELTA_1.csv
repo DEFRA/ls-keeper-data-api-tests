@@ -1,0 +1,8 @@
+H|CTSM_CADS_PROD_DELTA_00001_001_CT_ADDRESSES_DELTA_1.csv|01012025 12:00:00
+C|RECORD_TYPE|RECORD_COUNT|ADR_AUD_ID|ADR_AUD_TYPE|ADR_AUD_DATETIME|ADR_ID|ADR_LOC_ID|ADR_PAR_ID|ADR_NAME|ADR_ADDRESS_2|ADR_ADDRESS_3|ADR_ADDRESS_4|ADR_ADDRESS_5|ADR_POST_CODE|ADR_CURRENT_MODIFIED_DATE|ADR_CURRENT_STATUS|ADR_CURRENT_USER|ADR_CURRENT_PID|ADR_VERSION
+D|1          |705001      |U           |24-AUG-2026 07:15:00|700001|1414957   |600001    |FARM 1 MOD|NEW LANE     |TEST TOWN    |             |             |SW1A 1AB     |24-AUG-26                |1                 |m169953         |29             |2
+D|2          |705002      |U           |24-AUG-2026 07:30:00|700002|126127    |600002    |FARM 2 MOD|NEW LANE     |TEST TOWN    |             |             |SW1A 1AB     |24-AUG-26                |1                 |m169953         |29             |2
+D|3          |705003      |I           |24-AUG-2026 08:00:00|799901|9999001   |699901    |FARM NEW 1|NORTH ROAD   |NORTH TOWN   |             |             |NE1 1AA      |24-AUG-26                |1                 |m169953         |29             |1
+D|4          |705004      |I           |24-AUG-2026 08:30:00|799902|9999002   |699902    |FARM NEW 2|SOUTH ROAD   |SOUTH TOWN   |             |             |SO1 1AA      |24-AUG-26                |1                 |m169953         |29             |1
+T|CTSM_CADS_PROD_DELTA_00001_001_CT_ADDRESSES_DELTA_1.csv|01012025 12:00:00|4
+

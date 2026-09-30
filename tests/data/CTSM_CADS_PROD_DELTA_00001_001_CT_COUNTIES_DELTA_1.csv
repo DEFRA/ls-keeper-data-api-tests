@@ -1,0 +1,8 @@
+H|CTSM_CADS_PROD_DELTA_00001_001_CT_COUNTIES_DELTA_1.csv|01012025 12:00:00
+C|RECORD_TYPE|RECORD_COUNT|CTY_AUD_ID|CTY_AUD_TYPE|CTY_AUD_DATETIME|CTY_ID|CTY_CODE|CTY_NAME|CTY_UK_AREA|CTY_VET_AREA|CTY_PASSPORT_AREA|CTY_ADMIN_OFFICE|CTY_BCMS_TEAM|CTY_INSPECTION_AREA|CTY_DATA_MGT_AREA|CTY_CURRENT_USER|CTY_CURRENT_STATUS|CTY_CURRENT_MODIFIED_DATE|CTY_CURRENT_PID|CTY_VERSION
+D|1          |706001      |U           |24-AUG-2026 07:15:00|22    |52      |ELMSHIRE North U|W          |2           |5                 |83              |P02          |83                 |1                 |m169953         |1                 |24-AUG-26                |29             |2
+D|2          |706002      |U           |24-AUG-2026 07:30:00|17    |14      |NETHERSHIRE Lower U|         |4           |2                 |16              |P02          |16                 |1                 |m169953         |1                 |24-AUG-26                |29             |2
+D|3          |706003      |I           |24-AUG-2026 08:00:00|991   |91      |NEWSHIRE North  |E          |1           |1                 |90              |P01          |90                 |1                 |m169953         |1                 |24-AUG-26                |29             |1
+D|4          |706004      |I           |24-AUG-2026 08:30:00|992   |92      |NEWSHIRE South  |E          |1           |1                 |90              |P01          |90                 |1                 |m169953         |1                 |24-AUG-26                |29             |1
+T|CTSM_CADS_PROD_DELTA_00001_001_CT_COUNTIES_DELTA_1.csv|01012025 12:00:00|4
+

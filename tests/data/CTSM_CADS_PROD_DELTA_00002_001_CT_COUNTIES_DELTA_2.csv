@@ -1,0 +1,8 @@
+H|CTSM_CADS_PROD_DELTA_00002_001_CT_COUNTIES_DELTA_2.csv|01012025 12:00:00
+C|RECORD_TYPE|RECORD_COUNT|CTY_AUD_ID|CTY_AUD_TYPE|CTY_AUD_DATETIME|CTY_ID|CTY_CODE|CTY_NAME|CTY_UK_AREA|CTY_VET_AREA|CTY_PASSPORT_AREA|CTY_ADMIN_OFFICE|CTY_BCMS_TEAM|CTY_INSPECTION_AREA|CTY_DATA_MGT_AREA|CTY_CURRENT_USER|CTY_CURRENT_STATUS|CTY_CURRENT_MODIFIED_DATE|CTY_CURRENT_PID|CTY_VERSION
+D|1          |706010      |U           |25-AUG-2026 08:00:00|22    |52      |ELMSHIRE North Final|W       |2           |5                 |83              |P02          |83                 |1                 |m167619         |1                 |25-AUG-26                |29             |3
+D|2          |706011      |U           |25-AUG-2026 08:30:00|991   |91      |NEWSHIRE North U|E          |1           |1                 |90              |P01          |90                 |1                 |m167619         |1                 |25-AUG-26                |29             |2
+D|3          |706012      |D           |25-AUG-2026 10:00:00|6     |55      |BRIARSHIRE Coast|W          |2           |5                 |84              |P02          |84                 |2                 |f800702         |2                 |25-AUG-26                |232            |2
+D|4          |706013      |I           |25-AUG-2026 15:00:00|993   |93      |NEWSHIRE West   |E          |1           |1                 |90              |P01          |90                 |1                 |m167811         |1                 |25-AUG-26                |29             |1
+T|CTSM_CADS_PROD_DELTA_00002_001_CT_COUNTIES_DELTA_2.csv|01012025 12:00:00|4
+

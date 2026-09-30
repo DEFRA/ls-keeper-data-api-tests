@@ -37,7 +37,12 @@ export const DEFAULT_OMITTED_COLUMNS: Record<string, string> = {
   sam_cph_holder: 'SAON_START_NUMBER',
   amls2_common_land: 'ADDRESS_LINE_2',
   amls2_port: 'ADDRESS_LINE_2',
-  cts_location_identifiers: 'LID_SUB_IDENTIFIER'
+  cts_location_identifiers: 'LID_SUB_IDENTIFIER',
+  cts_locations: 'LOC_COMMENTS',
+  cts_location_party_rels: 'LPR_COMMENTS',
+  cts_parties: 'PAR_COMMENTS',
+  cts_addresses: 'ADR_ADDRESS_2',
+  cts_counties: 'CTY_ADMIN_OFFICE'
 }
 
 /**

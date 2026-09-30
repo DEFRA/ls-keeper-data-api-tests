@@ -88,21 +88,24 @@ function foldDeltas(
 
   for (const set of normalized) {
     for (const d of set) {
-      const type = (
-        d.CHANGE_TYPE ||
-        d.change_type ||
-        d.LID_AUD_TYPE ||
-        d.lid_aud_type ||
-        'I'
+      const audTypeKey = Object.keys(d).find((k) =>
+        /(^change_type$|_aud_type$)/i.test(k)
       )
-        .toUpperCase()
-        .trim()
+      const type = (audTypeKey ? d[audTypeKey] : 'I').toUpperCase().trim()
       const id = String(d[pk] ?? '').trim()
       if (type === 'U' || type === 'I') {
         map.set(id, { ...map.get(id), ...d })
       } else if (type === 'D') {
         // For CTS datasets, 'D' (deletes) are processed per LKPR-211
-        if (dataset === 'cts_location_identifiers' || pk === 'LID_ID') {
+        if (
+          dataset?.startsWith('cts_') ||
+          pk.startsWith('LID_') ||
+          pk.startsWith('LOC_') ||
+          pk.startsWith('LPR_') ||
+          pk.startsWith('PAR_') ||
+          pk.startsWith('ADR_') ||
+          pk.startsWith('CTY_')
+        ) {
           map.delete(id)
         }
         // For legacy SAM/AMLS2 datasets, 'D' is ignored per LKPR-88

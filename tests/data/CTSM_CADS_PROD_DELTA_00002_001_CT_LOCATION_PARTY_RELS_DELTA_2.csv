@@ -1,0 +1,8 @@
+H|CTSM_CADS_PROD_DELTA_00002_001_CT_LOCATION_PARTY_RELS_DELTA_2.csv|01012025 12:00:00
+C|RECORD_TYPE|RECORD_COUNT|LPR_AUD_ID|LPR_AUD_TYPE|LPR_AUD_DATETIME|LPR_ID|LPR_LOC_ID|LPR_LPT_ID|LPR_PAR_ID|LPR_EFFECTIVE_FROM_DATE|LPR_EFFECTIVE_TO_DATE|LPR_CESSATION_REASON|LPR_COMMENTS|LPR_CURRENT_USER|LPR_CURRENT_MODIFIED_DATE|LPR_CURRENT_STATUS|LPR_CURRENT_PID|LPR_VERSION
+D|1          |703010      |U           |25-AUG-2026 08:00:00|500001|1414957   |4         |600001    |01-JUL-96              |                     |                    |Delta 2 re-update|m167619      |25-AUG-26                |1                 |29             |3
+D|2          |703011      |U           |25-AUG-2026 08:30:00|599901|9999001   |4         |600001    |24-AUG-26              |                     |                    |Delta 2 update insert|m167619  |25-AUG-26                |1                 |29             |2
+D|3          |703012      |D           |25-AUG-2026 10:00:00|500003|308856    |4         |600003    |01-JUL-96              |25-AUG-26            |C                   |Deleted in Delta 2|f800702     |25-AUG-26                |2                 |232            |2
+D|4          |703013      |I           |25-AUG-2026 15:00:00|599903|9999003   |4         |600003    |25-AUG-26              |                     |                    |Delta 2 insert 3|m167811       |25-AUG-26                |1                 |29             |1
+T|CTSM_CADS_PROD_DELTA_00002_001_CT_LOCATION_PARTY_RELS_DELTA_2.csv|01012025 12:00:00|4
+
