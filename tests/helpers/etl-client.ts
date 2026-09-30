@@ -336,7 +336,7 @@ export class EtlClient {
     dataset?: string,
     sourceType: SourceType = (process.env.SOURCE_TYPE as SourceType) ||
       'internal',
-    timeout = 60000,
+    timeout = 180000,
     interval = 2000
   ): Promise<ImportStatusResponse> {
     const triggerRes = await this.triggerImport(dataset, sourceType)

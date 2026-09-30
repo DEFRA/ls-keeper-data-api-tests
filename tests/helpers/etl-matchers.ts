@@ -97,15 +97,7 @@ function foldDeltas(
         map.set(id, { ...map.get(id), ...d })
       } else if (type === 'D') {
         // For CTS datasets, 'D' (deletes) are processed per LKPR-211
-        if (
-          dataset?.startsWith('cts_') ||
-          pk.startsWith('LID_') ||
-          pk.startsWith('LOC_') ||
-          pk.startsWith('LPR_') ||
-          pk.startsWith('PAR_') ||
-          pk.startsWith('ADR_') ||
-          pk.startsWith('CTY_')
-        ) {
+        if (dataset?.startsWith('cts_')) {
           map.delete(id)
         }
         // For legacy SAM/AMLS2 datasets, 'D' is ignored per LKPR-88

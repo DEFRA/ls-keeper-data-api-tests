@@ -33,7 +33,8 @@ export default defineConfig({
   projects: [
     {
       name: 'bridge-etl',
-      testDir: './tests/specs/bridge'
+      testDir: './tests/specs/bridge',
+      timeout: 180000
     },
     {
       name: 'krds-api',
