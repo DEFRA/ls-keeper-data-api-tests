@@ -260,10 +260,22 @@ test.describe
   test('should return 409 Conflict when attempting to bind an email already associated with a different subject', async ({
     apiClient
   }) => {
-    const conflictingSub = `sub-conflict-${uniqueId}`
+    const testId = `${Date.now()}-${Math.random().toString(36).substring(2, 7)}`
+    const sharedEmail = `conflict.${testId}@example.test`
+    const originalSub = `sub-original-${testId}`
+    const conflictingSub = `sub-conflict-${testId}`
+
+    const initialRes = await apiClient.ensureUserAccount({
+      sub: originalSub,
+      email: sharedEmail,
+      given_name: 'Original',
+      family_name: 'Person'
+    })
+    expect(initialRes.status()).toBe(201)
+
     const response = await apiClient.ensureUserAccount({
       sub: conflictingSub,
-      email: ownerEmail,
+      email: sharedEmail,
       given_name: 'Another',
       family_name: 'Person'
     })
@@ -274,10 +286,22 @@ test.describe
   test('should return 409 Conflict when attempting to bind an email already associated with a different subject even if whitespace-padded [LKPR-273]', async ({
     apiClient
   }) => {
-    const paddedSub = `sub-padded-conflict-${uniqueId}`
+    const testId = `${Date.now()}-${Math.random().toString(36).substring(2, 7)}`
+    const sharedEmail = `padded.${testId}@example.test`
+    const originalSub = `sub-padded-original-${testId}`
+    const paddedSub = `sub-padded-conflict-${testId}`
+
+    const initialRes = await apiClient.ensureUserAccount({
+      sub: originalSub,
+      email: sharedEmail,
+      given_name: 'Padded',
+      family_name: 'Original'
+    })
+    expect(initialRes.status()).toBe(201)
+
     const response = await apiClient.ensureUserAccount({
       sub: paddedSub,
-      email: `  ${ownerEmail}  `,
+      email: `  ${sharedEmail}  `,
       given_name: 'Whitespace',
       family_name: 'Padded'
     })
