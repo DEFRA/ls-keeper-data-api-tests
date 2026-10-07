@@ -107,6 +107,60 @@ function foldDeltas(
   return Array.from(map.values())
 }
 
+const ORACLE_MONTHS = [
+  'JAN',
+  'FEB',
+  'MAR',
+  'APR',
+  'MAY',
+  'JUN',
+  'JUL',
+  'AUG',
+  'SEP',
+  'OCT',
+  'NOV',
+  'DEC'
+]
+
+/**
+ * Normalizes values between raw CSV text and typed DuckDB storage.
+ *
+ * WHY THIS IS NEEDED:
+ * Legacy CTS / CADS CSV fixtures store dates in Oracle format (e.g. '01-JUL-96' or '11-SEP-02').
+ * In LKPR-263 / LKPR-268, the Data Bridge ETL pipeline was updated to strongly type Parquet and
+ * DuckDB tables, which automatically standardizes dates to ISO-8601 ('YYYY-MM-DD', e.g. '1996-07-01').
+ * To avoid false assertion failures caused solely by date formatting differences, this function
+ * normalizes Oracle date strings to ISO-8601 so Playwright compares their semantic values.
+ *
+ * HOW IT WORKS:
+ * 1. Checks for 3 hyphen-separated parts (e.g. '01-JUL-96' -> ['01', 'JUL', '96']).
+ * 2. Matches the middle segment against standard three-letter month abbreviations.
+ * 3. Expands 2-digit years using standard POSIX pivot rules (>= 50 -> 1900s, < 50 -> 2000s).
+ * 4. Returns 'YYYY-MM-DD'. Non-date values and nulls are returned cleanly as-is.
+ */
+function normalizeValue(val: unknown): string | null {
+  if (val === '' || val === null || val === undefined) return null
+  const str = String(val).trim()
+
+  const parts = str.split('-')
+  if (parts.length === 3) {
+    const [day, mon, rawYear] = parts
+    const monthIndex = ORACLE_MONTHS.indexOf(mon.toUpperCase())
+
+    if (monthIndex !== -1) {
+      const yearPart = rawYear.trim().split(' ')[0]
+      const y = parseInt(yearPart, 10)
+      const fullYear =
+        yearPart.length === 2 ? (y >= 50 ? 1900 + y : 2000 + y) : y
+      const mm = String(monthIndex + 1).padStart(2, '0')
+      const dd = day.padStart(2, '0')
+      return `${fullYear}-${mm}-${dd}`
+    }
+  }
+
+  return str
+}
+
 expect.extend({
   toMatchRecords(
     actualRows: Record<string, unknown>[],
@@ -128,7 +182,7 @@ expect.extend({
       const clean: Record<string, unknown> = {}
       for (const [k, v] of Object.entries(row)) {
         if (DEFAULT_IGNORED_FIELDS.has(k)) continue
-        clean[k] = v === '' || v === null || v === undefined ? null : String(v)
+        clean[k] = normalizeValue(v)
       }
       return clean
     }
