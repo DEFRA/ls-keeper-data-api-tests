@@ -200,6 +200,7 @@ tests/
     ├── api/                              # Keeper Data Consumer API endpoint specifications
     │   ├── cph-associations.spec.ts
     │   ├── holding-detail.spec.ts
+    │   ├── holdings.spec.ts              # [LKPR-264] Paginated CPH / Holdings collection API endpoint
     │   └── user-accounts.spec.ts
     └── bridge/                           # Data Bridge ETL pipeline dataset specifications
         ├── amls2-common-land.spec.ts

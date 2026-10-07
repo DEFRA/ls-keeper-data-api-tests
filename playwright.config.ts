@@ -37,8 +37,16 @@ export default defineConfig({
       timeout: 180000
     },
     {
+      name: 'api-setup',
+      testDir: './tests/setup',
+      testMatch: /api\.setup\.ts/,
+      timeout: 180000
+    },
+    {
       name: 'krds-api',
-      testDir: './tests/specs/api'
+      testDir: './tests/specs/api',
+      dependencies: ['api-setup'],
+      timeout: 60000
     }
   ]
 })

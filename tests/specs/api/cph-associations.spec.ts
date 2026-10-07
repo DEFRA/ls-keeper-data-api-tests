@@ -2,22 +2,6 @@ import { test, expect } from '../../fixtures/base.fixture.js'
 
 test.describe
   .serial('KRDS API: GET /api/v2/cph-associations — User-role-CPH associations by email', () => {
-  test.beforeAll(async ({ etlClient, apiClient }) => {
-    test.setTimeout(180000)
-
-    // Upload SAM datasets
-    await etlClient.uploadFile('LITP_SAMCPHHOLDING_BASELINE.csv')
-    await etlClient.uploadFile('LITP_SAMCPHHOLDER_BASELINE.csv')
-    await etlClient.uploadFile('LITP_SAMPARTY_BASELINE.csv')
-    await etlClient.uploadFile('LITP_SAMHERD_BASELINE.csv')
-
-    // Ingest all uploaded datasets into DuckDB and export to SQLite read model
-    await etlClient.importDataset()
-
-    // Trigger SQLite read-model cache refresh so the API picks up the fresh database
-    await apiClient.refreshSqliteCache('read-model', false)
-  })
-
   test('should return all associated CPHs for an email with registered owner or holder associations (LKPR-270)', async ({
     apiClient
   }) => {

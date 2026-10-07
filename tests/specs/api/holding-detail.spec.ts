@@ -3,22 +3,6 @@ import type { HoldingDetail } from '../../helpers/krds-client.js'
 
 test.describe
   .serial('KRDS API: GET /api/v2/holdings/{county}/{parish}/{holding} — Holding detail by CPH', () => {
-  test.beforeAll(async ({ etlClient, apiClient }) => {
-    test.setTimeout(180000)
-
-    // Upload SAM datasets (Holdings, Holders, Parties, Herds)
-    await etlClient.uploadFile('LITP_SAMCPHHOLDING_BASELINE.csv')
-    await etlClient.uploadFile('LITP_SAMCPHHOLDER_BASELINE.csv')
-    await etlClient.uploadFile('LITP_SAMPARTY_BASELINE.csv')
-    await etlClient.uploadFile('LITP_SAMHERD_BASELINE.csv')
-
-    // Ingest all uploaded datasets into DuckDB and export to SQLite read model
-    await etlClient.importDataset()
-
-    // Trigger SQLite read-model cache refresh so the API picks up the fresh database
-    await apiClient.refreshSqliteCache('read-model', false)
-  })
-
   test('should return 200 with the documented holding detail shape for an existing CPH (AC 1, AC 4, AC 5, AC 6)', async ({
     apiClient
   }) => {

@@ -1,4 +1,4 @@
-import { APIRequestContext, APIResponse, expect } from '@playwright/test'
+import { APIRequestContext, APIResponse } from '@playwright/test'
 import { resolveApiBaseUrl } from './url-resolver.js'
 
 export interface CphAssociation {
@@ -98,6 +98,32 @@ export interface UserAccountDto {
   lastUpdatedDate: string
 }
 
+export interface HoldingDetailPaginatedResult {
+  count: number
+  totalCount: number
+  values: HoldingDetail[] | null
+  page: number
+  pageSize: number
+  totalPages: number
+  hasNextPage: boolean
+  hasPreviousPage: boolean
+  nextCursor?: string | null
+}
+
+export interface GetHoldingsOptions extends KrdsRequestOptions {
+  page?: number
+  pageSize?: number
+  sort?: 'asc' | 'desc' | string
+  order?:
+    | 'cph'
+    | 'identifier'
+    | 'name'
+    | 'holdingType'
+    | 'startDate'
+    | 'endDate'
+    | string
+}
+
 export interface KrdsRequestOptions {
   headers?: Record<string, string>
   params?: Record<string, string>
@@ -170,18 +196,6 @@ export class KrdsApiClient {
   }
 
   /**
-   * Helper that retrieves CPH associations and asserts HTTP 200 OK, returning the parsed array.
-   */
-  async getCphAssociationsData(email: string): Promise<CphAssociation[]> {
-    const response = await this.getCphAssociations(email)
-    expect(
-      response.ok(),
-      `GET cph-associations failed with HTTP ${response.status()} at [${response.url()}]: ${await response.text()}`
-    ).toBeTruthy()
-    return response.json()
-  }
-
-  /**
    * GET /api/v2/holdings/{county}/{parish}/{holding}
    * Retrieves holding details for a CPH by its county, parish, and holding segments.
    */
@@ -198,36 +212,23 @@ export class KrdsApiClient {
   }
 
   /**
-   * Convenience helper to query holding by CPH string (e.g. "13/169/0007")
+   * GET /api/v2/holdings
+   * Retrieves a paginated list of holding details from the cached SAM read model.
    */
-  async getHoldingByCph(
-    cph: string,
-    options: KrdsRequestOptions = {}
-  ): Promise<APIResponse> {
-    const parts = cph.split('/')
-    if (parts.length !== 3) {
-      return this.get(`api/v2/holdings/${cph}`, {
-        headers: this.getHeaders(options.headers),
-        params: options.params
-      })
+  async getHoldings(options: GetHoldingsOptions = {}): Promise<APIResponse> {
+    const { page, pageSize, sort, order, headers, params } = options
+    const queryParams: Record<string, string> = {
+      ...(page !== undefined ? { page: String(page) } : {}),
+      ...(pageSize !== undefined ? { pageSize: String(pageSize) } : {}),
+      ...(sort !== undefined ? { sort } : {}),
+      ...(order !== undefined ? { order } : {}),
+      ...params
     }
-    return this.getHolding(parts[0], parts[1], parts[2], options)
-  }
 
-  /**
-   * Helper that retrieves holding details and asserts HTTP 200 OK, returning the parsed payload.
-   */
-  async getHoldingData(
-    county: string,
-    parish: string,
-    holding: string
-  ): Promise<HoldingDetail> {
-    const response = await this.getHolding(county, parish, holding)
-    expect(
-      response.ok(),
-      `GET holding failed with HTTP ${response.status()} at [${response.url()}]: ${await response.text()}`
-    ).toBeTruthy()
-    return response.json()
+    return this.get('api/v2/holdings', {
+      headers: this.getHeaders(headers),
+      params: queryParams
+    })
   }
 
   /**

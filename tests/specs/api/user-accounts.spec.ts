@@ -5,43 +5,33 @@ import type { UserAccountDto } from '../../helpers/krds-client.js'
 
 test.describe
   .serial('KRDS API: /api/v2/user-accounts — User account lifecycle and session management', () => {
-  // Generate unique run identifiers to guarantee deterministic MongoDB and SQLite isolation
-  const uniqueId = `${Date.now()}-${Math.random().toString(36).substring(2, 7)}`
-  const testSub = `sub-farmer-${uniqueId}`
-  const ownerEmail = `owner.${uniqueId}@example.test`
-  const testEmail = `user.${uniqueId}@example.test`
+  let uniqueId: string
+  let ownerEmail: string
+  let expectedPartyId: string
+  let testSub: string
+  let testEmail: string
 
-  test.beforeAll(async ({ etlClient, apiClient }) => {
-    test.setTimeout(180000)
-
-    // Substitute single.owner@example.test with our unique ownerEmail so it dynamically links to CPH 37/004/0004
-    const partyFilePath = path.resolve('tests/data/LITP_SAMPARTY_BASELINE.csv')
-    const partyRaw = fs.readFileSync(partyFilePath, 'utf8')
-    const dynamicPartyContent = partyRaw.replace(
-      'single.owner@example.test',
-      ownerEmail
-    )
-
-    // Upload SAM datasets (Holdings, Holders, Parties with dynamic email, Herds)
-    await etlClient.uploadFile('LITP_SAMCPHHOLDING_BASELINE.csv')
-    await etlClient.uploadFile('LITP_SAMCPHHOLDER_BASELINE.csv')
-    await etlClient.uploadFile(
-      'LITP_SAMPARTY_BASELINE.csv',
-      undefined,
-      dynamicPartyContent
-    )
-    await etlClient.uploadFile('LITP_SAMHERD_BASELINE.csv')
-
-    // Ingest all uploaded datasets into DuckDB and export to SQLite read model
-    await etlClient.importDataset()
-
-    // Trigger SQLite read-model cache refresh so the API picks up the fresh database
-    await apiClient.refreshSqliteCache('read-model', false)
+  test.beforeAll(() => {
+    try {
+      const statePath = path.resolve('.cache/api-setup.json')
+      if (fs.existsSync(statePath)) {
+        const state = JSON.parse(fs.readFileSync(statePath, 'utf8'))
+        uniqueId = state.uniqueId
+        ownerEmail = state.ownerEmail
+        expectedPartyId = state.partyId
+      }
+    } catch {
+      // Fallback if run standalone without setup
+    }
+    if (!uniqueId) {
+      const fallbackId = `${Date.now()}-${Math.random().toString(36).substring(2, 7)}`
+      uniqueId = fallbackId
+      ownerEmail = `owner.${fallbackId}@example.test`
+      expectedPartyId = 'C3700099'
+    }
+    testSub = `sub-farmer-${uniqueId}`
+    testEmail = `user.${uniqueId}@example.test`
   })
-
-  // =========================================================================
-  // Test Suite 1: Account Creation & Onboarding (POST /api/v2/user-accounts)
-  // =========================================================================
 
   test('should create a new user account with populated CPH associations from SAM read model (AC 1)', async ({
     apiClient
@@ -55,7 +45,6 @@ test.describe
 
     expect(response.status()).toBe(201)
 
-    // Location header points to session lookup route
     const location = response.headers()['location']
     expect(location).toBe(`/api/v2/user-accounts/${testSub}`)
 
@@ -67,7 +56,6 @@ test.describe
     expect(data.lastName).toBe('Farmer')
     expect(data.displayName).toBe('Jane Farmer')
 
-    // CPH associations built from SAM read model
     expect(Array.isArray(data.cphAssociations)).toBe(true)
     expect(data.cphAssociations!.length).toBeGreaterThan(0)
 
@@ -76,10 +64,9 @@ test.describe
     )
     expect(association).toBeDefined()
     expect(association!.role).toBe('owner')
-    expect(association!.partyId).toBe('C3700004')
+    expect(association!.partyId).toBe(expectedPartyId)
     expect(association!.holdingName).toBe('Feature 3')
 
-    // Timestamp validations
     expect(data.associationsRefreshedDate).toBeIso8601Utc()
     expect(data.lastUpdatedDate).toBeIso8601Utc()
   })
@@ -124,10 +111,6 @@ test.describe
     expect(Array.isArray(data.cphAssociations)).toBe(true)
   })
 
-  // =========================================================================
-  // Test Suite 2: Account Update & Snapshot Refresh (POST /api/v2/user-accounts)
-  // =========================================================================
-
   test('should update profile fields and return 200 OK for an existing recognized subject (AC 2)', async ({
     apiClient
   }) => {
@@ -162,15 +145,10 @@ test.describe
     expect(response.status()).toBe(200)
     const data: UserAccountDto = await response.json()
 
-    // Ensure CPHs are distinct without duplicates
     const cphNumbers = data.cphAssociations!.map((a) => a.cphNumber)
     const uniqueCphs = new Set(cphNumbers)
     expect(cphNumbers.length).toBe(uniqueCphs.size)
   })
-
-  // =========================================================================
-  // Test Suite 3: Session Lookup (GET /api/v2/user-accounts/{subject})
-  // =========================================================================
 
   test('should retrieve existing user account session without recomputing associations (AC 5)', async ({
     apiClient
@@ -197,7 +175,6 @@ test.describe
     const slashSub = `provider/tenant/${uniqueId}`
     const slashEmail = `slash.${uniqueId}@example.test`
 
-    // Create user with forward slash in subject
     const createRes = await apiClient.ensureUserAccount({
       sub: slashSub,
       email: slashEmail,
@@ -206,7 +183,6 @@ test.describe
     })
     expect(createRes.status()).toBe(201)
 
-    // Retrieve user session with URL-encoded slash in path
     const getRes = await apiClient.getUserAccount(slashSub)
     expect(getRes.status()).toBe(200)
 
@@ -221,10 +197,6 @@ test.describe
     const response = await apiClient.getUserAccount('unknown-subject-999999999')
     await expect(response).toBeApiError(404, { title: 'Not Found' })
   })
-
-  // =========================================================================
-  // Test Suite 4: Request Body Validation (422 Unprocessable Content - AC 4)
-  // =========================================================================
 
   test('should return 422 Unprocessable Content when the subject claim is missing or empty', async ({
     apiClient
@@ -285,14 +257,9 @@ test.describe
     await expect(resNoLast).toBeApiError(422, { field: 'FamilyName' })
   })
 
-  // =========================================================================
-  // Test Suite 5: Security & Business Conflict Constraints
-  // =========================================================================
-
   test('should return 409 Conflict when attempting to bind an email already associated with a different subject', async ({
     apiClient
   }) => {
-    // Attempting to create an account with a DIFFERENT subject but ownerEmail (already bound to testSub)
     const conflictingSub = `sub-conflict-${uniqueId}`
     const response = await apiClient.ensureUserAccount({
       sub: conflictingSub,
@@ -307,7 +274,6 @@ test.describe
   test('should return 409 Conflict when attempting to bind an email already associated with a different subject even if whitespace-padded [LKPR-273]', async ({
     apiClient
   }) => {
-    // Attempting to bind ownerEmail with whitespace padding to a different subject
     const paddedSub = `sub-padded-conflict-${uniqueId}`
     const response = await apiClient.ensureUserAccount({
       sub: paddedSub,
@@ -324,7 +290,6 @@ test.describe
   }) => {
     const gatewayKey = process.env.GATEWAY_API_KEY || process.env.API_KEY || ''
 
-    // Missing Authorization
     const resNoAuth = await apiClient.post('api/v2/user-accounts', {
       headers: {
         'x-api-key': gatewayKey,
@@ -339,7 +304,6 @@ test.describe
     })
     expect(resNoAuth.status()).toBe(401)
 
-    // Invalid Authorization
     const resInvalidAuth = await apiClient.post('api/v2/user-accounts', {
       headers: {
         'x-api-key': gatewayKey,
@@ -361,7 +325,6 @@ test.describe
   }) => {
     const gatewayKey = process.env.GATEWAY_API_KEY || process.env.API_KEY || ''
 
-    // Missing Authorization
     const resNoAuth = await apiClient.get(`api/v2/user-accounts/${testSub}`, {
       headers: {
         'x-api-key': gatewayKey
@@ -369,7 +332,6 @@ test.describe
     })
     expect(resNoAuth.status()).toBe(401)
 
-    // Invalid Authorization
     const resInvalidAuth = await apiClient.get(
       `api/v2/user-accounts/${testSub}`,
       {

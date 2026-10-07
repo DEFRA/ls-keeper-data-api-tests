@@ -114,13 +114,6 @@ export class EtlClient {
   }
 
   /**
-   * Cleans storage (delegates to full purge across all datasets and stages)
-   */
-  async cleanStorage(): Promise<void> {
-    await this.purgeStorage({ dataset: 'all', stage: 'all' })
-  }
-
-  /**
    * Resolves a raw data file from tests/data, encrypts it in memory, and uploads it to S3
    */
   async uploadFile(
