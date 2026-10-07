@@ -122,6 +122,7 @@ export interface GetHoldingsOptions extends KrdsRequestOptions {
     | 'startDate'
     | 'endDate'
     | string
+  search?: string
 }
 
 export interface KrdsRequestOptions {
@@ -216,12 +217,13 @@ export class KrdsApiClient {
    * Retrieves a paginated list of holding details from the cached SAM read model.
    */
   async getHoldings(options: GetHoldingsOptions = {}): Promise<APIResponse> {
-    const { page, pageSize, sort, order, headers, params } = options
+    const { page, pageSize, sort, order, search, headers, params } = options
     const queryParams: Record<string, string> = {
       ...(page !== undefined ? { page: String(page) } : {}),
       ...(pageSize !== undefined ? { pageSize: String(pageSize) } : {}),
       ...(sort !== undefined ? { sort } : {}),
       ...(order !== undefined ? { order } : {}),
+      ...(search !== undefined ? { search } : {}),
       ...params
     }
 
