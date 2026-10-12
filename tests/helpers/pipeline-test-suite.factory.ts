@@ -1,6 +1,6 @@
 import { test, expect } from '../fixtures/base.fixture.js'
 import { parseCsvFile } from './csv-parser.js'
-import { DATASET_PRIMARY_KEYS } from './etl-matchers.js'
+import { DATASET_PRIMARY_KEYS, DEFAULT_IGNORED_FIELDS } from './etl-matchers.js'
 import { EtlClient } from './etl-client.js'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -124,12 +124,98 @@ export function definePipelineTestSuite(config: PipelineSuiteConfig) {
         ).toBeGreaterThan(0)
       }
 
+      const optimiseStage = (importStatus.stages || []).find(
+        (s) => s.name === 'optimise'
+      )
+      expect(optimiseStage).toBeDefined()
+      if (optimiseStage && typeof optimiseStage.itemCount === 'number') {
+        expect(
+          optimiseStage.itemCount,
+          `ETL Optimise stage processed 0 parquet files for ${datasetName}.`
+        ).toBeGreaterThan(0)
+      }
+
       // 2. Download resulting DuckDB database extract
       const duckDbBuffer = await etlClient.downloadDuckDb(
         importStatus.presignedDuckDbUri
       )
       await duckDbClient.openFromBuffer(duckDbBuffer)
 
+      // 3. Verify DuckDB physical schema & native column types (LKPR-263 / LKPR-268 / LKPR-277)
+      const columnTypes = await duckDbClient.getColumnTypes(datasetName)
+      expect(Object.keys(columnTypes).length).toBeGreaterThan(0)
+
+      // 3a. Verify envelope and audit control columns are physically excluded from DuckDB
+      for (const ignoredField of DEFAULT_IGNORED_FIELDS) {
+        expect(
+          columnTypes[ignoredField],
+          `Ingestion control/envelope column ${ignoredField} should be physically excluded from ${datasetName}`
+        ).toBeUndefined()
+      }
+
+      // 3b. Verify optimise stage converted columns from all-VARCHAR to native DuckDB types
+      const hasNonVarcharType = Object.values(columnTypes).some(
+        (type) => type !== 'VARCHAR'
+      )
+      expect(
+        hasNonVarcharType,
+        `Expected ${datasetName} to contain strongly-typed non-VARCHAR columns after the optimise stage, got: ${JSON.stringify(columnTypes)}`
+      ).toBe(true)
+
+      if ('BATCH_ID' in columnTypes) {
+        expect(columnTypes.BATCH_ID).toMatch(
+          /^(BIGINT|INTEGER|HUGEINT|SMALLINT)$/i
+        )
+      }
+      if ('EASTING' in columnTypes) {
+        expect(columnTypes.EASTING).toMatch(/^(BIGINT|INTEGER|DOUBLE|DECIMAL)/i)
+      }
+      if ('NORTHING' in columnTypes) {
+        expect(columnTypes.NORTHING).toMatch(
+          /^(BIGINT|INTEGER|DOUBLE|DECIMAL)/i
+        )
+      }
+
+      if (datasetName.startsWith('cts_')) {
+        const pk = config.primaryKey || DATASET_PRIMARY_KEYS[datasetName]
+        if (pk && pk in columnTypes) {
+          expect(columnTypes[pk]).toMatch(/^(BIGINT|INTEGER|HUGEINT)$/i)
+        }
+        for (const [col, colType] of Object.entries(columnTypes)) {
+          if (
+            col.endsWith('_MODIFIED_DATE') ||
+            col.includes('_EFFECTIVE_FROM')
+          ) {
+            expect(
+              colType,
+              `Expected CTS date column ${col} in ${datasetName} to have native DATE/TIMESTAMP type`
+            ).toMatch(/^(DATE|TIMESTAMP)/i)
+          }
+        }
+      }
+
+      const expectedVarcharColumns = [
+        'CPH',
+        'PARTY_ID',
+        'HERDMARK',
+        'POSTCODE',
+        'ADR_NAME',
+        'CTY_NAME',
+        'LID_IDENTIFIER',
+        'PAR_SURNAME',
+        'LOC_MAP_REF',
+        'LPR_PARTY_TYPE_CODE'
+      ]
+      for (const strCol of expectedVarcharColumns) {
+        if (strCol in columnTypes) {
+          expect(
+            columnTypes[strCol],
+            `Expected identifier/text column ${strCol} in ${datasetName} to remain VARCHAR`
+          ).toBe('VARCHAR')
+        }
+      }
+
+      // 4. Verify row records match baseline
       const rows = await duckDbClient.getTableRows(datasetName)
       expect(rows).toMatchRecords(baselineRecords, {
         dataset: datasetName,
@@ -323,6 +409,17 @@ export function definePipelineTestSuite(config: PipelineSuiteConfig) {
             'load-duckdb'
           ])
         )
+
+        const optimiseStage = (importStatus.stages || []).find(
+          (s) => s.name === 'optimise'
+        )
+        expect(optimiseStage).toBeDefined()
+        if (optimiseStage && typeof optimiseStage.itemCount === 'number') {
+          expect(
+            optimiseStage.itemCount,
+            `ETL Optimise stage processed 0 parquet files for ${datasetName} during omitted-column delta.`
+          ).toBeGreaterThan(0)
+        }
 
         const duckDbBuffer = await etlClient.downloadDuckDb(
           importStatus.presignedDuckDbUri

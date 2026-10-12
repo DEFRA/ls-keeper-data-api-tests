@@ -49,6 +49,20 @@ export class DuckDbClient {
   }
 
   /**
+   * Returns a map of column_name -> data_type for a specific table from DuckDB information_schema
+   */
+  async getColumnTypes(tableName: string): Promise<Record<string, string>> {
+    const rows = await this.query<{ column_name: string; data_type: string }>(
+      `SELECT column_name, data_type FROM information_schema.columns WHERE table_schema = 'main' AND table_name = '${tableName}';`
+    )
+    const columnTypes: Record<string, string> = {}
+    for (const row of rows) {
+      columnTypes[row.column_name] = row.data_type
+    }
+    return columnTypes
+  }
+
+  /**
    * Returns total row count for a specific table
    */
   async getRowCount(tableName: string): Promise<number> {
