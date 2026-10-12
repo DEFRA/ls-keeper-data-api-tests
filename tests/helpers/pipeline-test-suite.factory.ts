@@ -109,7 +109,7 @@ export function definePipelineTestSuite(config: PipelineSuiteConfig) {
           'discover',
           'decrypt',
           'normalise',
-          'snapshot',
+          'optimise',
           'load-duckdb'
         ])
       )
@@ -319,7 +319,7 @@ export function definePipelineTestSuite(config: PipelineSuiteConfig) {
             'discover',
             'decrypt',
             'normalise',
-            'snapshot',
+            'optimise',
             'load-duckdb'
           ])
         )

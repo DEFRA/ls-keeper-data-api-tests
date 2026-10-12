@@ -257,56 +257,46 @@ test.describe
     await expect(resNoLast).toBeApiError(422, { field: 'FamilyName' })
   })
 
-  test('should return 409 Conflict when attempting to bind an email already associated with a different subject', async ({
+  test('should create a new user account with 201 Created when a returning user logs in with a new subject for an existing email', async ({
     apiClient
   }) => {
-    const testId = `${Date.now()}-${Math.random().toString(36).substring(2, 7)}`
-    const sharedEmail = `conflict.${testId}@example.test`
-    const originalSub = `sub-original-${testId}`
-    const conflictingSub = `sub-conflict-${testId}`
-
-    const initialRes = await apiClient.ensureUserAccount({
-      sub: originalSub,
-      email: sharedEmail,
-      given_name: 'Original',
-      family_name: 'Person'
-    })
-    expect(initialRes.status()).toBe(201)
-
+    const newSub = `sub-reissued-${uniqueId}`
     const response = await apiClient.ensureUserAccount({
-      sub: conflictingSub,
-      email: sharedEmail,
-      given_name: 'Another',
-      family_name: 'Person'
+      sub: newSub,
+      email: ownerEmail,
+      given_name: 'Returning',
+      family_name: 'Keeper'
     })
 
-    await expect(response).toBeApiError(409, { title: 'Conflict' })
+    expect(response.status()).toBe(201)
+    const data: UserAccountDto = await response.json()
+    expect(data.id).toBeTruthy()
+    expect(data.subject).toBe(newSub)
+    expect(data.email).toBe(ownerEmail)
+    expect(data.displayName).toBe('Returning Keeper')
+    expect(Array.isArray(data.cphAssociations)).toBe(true)
+    expect(data.cphAssociations!.length).toBeGreaterThan(0)
   })
 
-  test('should return 409 Conflict when attempting to bind an email already associated with a different subject even if whitespace-padded [LKPR-273]', async ({
+  test('should trim leading and trailing whitespace on email and accurately resolve CPH associations [LKPR-273]', async ({
     apiClient
   }) => {
-    const testId = `${Date.now()}-${Math.random().toString(36).substring(2, 7)}`
-    const sharedEmail = `padded.${testId}@example.test`
-    const originalSub = `sub-padded-original-${testId}`
-    const paddedSub = `sub-padded-conflict-${testId}`
-
-    const initialRes = await apiClient.ensureUserAccount({
-      sub: originalSub,
-      email: sharedEmail,
-      given_name: 'Padded',
-      family_name: 'Original'
-    })
-    expect(initialRes.status()).toBe(201)
-
+    const paddedSub = `sub-padded-${uniqueId}`
     const response = await apiClient.ensureUserAccount({
       sub: paddedSub,
-      email: `  ${sharedEmail}  `,
+      email: `  ${ownerEmail}  `,
       given_name: 'Whitespace',
-      family_name: 'Padded'
+      family_name: 'Trimmed'
     })
 
-    await expect(response).toBeApiError(409, { title: 'Conflict' })
+    expect(response.status()).toBe(201)
+    const data: UserAccountDto = await response.json()
+    expect(data.subject).toBe(paddedSub)
+    expect(data.email).toBe(ownerEmail)
+    expect(Array.isArray(data.cphAssociations)).toBe(true)
+    expect(
+      data.cphAssociations!.some((a) => a.cphNumber === '37/004/0004')
+    ).toBe(true)
   })
 
   test('should return 401 Unauthorized on POST /ensure when Authorization header is missing or invalid', async ({

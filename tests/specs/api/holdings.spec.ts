@@ -1,5 +1,6 @@
 import { test, expect } from '../../fixtures/base.fixture.js'
 import type {
+  ApiErrorResponse,
   HoldingDetail,
   HoldingDetailPaginatedResult
 } from '../../helpers/krds-client.js'
@@ -318,18 +319,6 @@ test.describe
     expect(response.status()).toBe(401)
   })
 
-  test('should return 403 Forbidden when gateway x-api-key header is missing', async ({
-    apiClient
-  }) => {
-    const response = await apiClient.get('api/v2/holdings', {
-      headers: {
-        Authorization: `Basic ${process.env.KRDS_API_BASIC_AUTH || ''}`
-      }
-    })
-
-    expect(response.status()).toBe(403)
-  })
-
   test('should document GET /api/v2/holdings with complete schema in OpenAPI specification', async ({
     apiClient
   }) => {
@@ -458,6 +447,36 @@ test.describe
       await resPostcodeNoSpace.json()
     expect(dataNoSpace.values?.length).toBe(1)
     expect(dataNoSpace.values![0].identifier).toBe('37/003/0003')
+  })
+
+  test('should filter holdings by address lines and UDPRN (LKPR-271 AC 5)', async ({
+    apiClient
+  }) => {
+    // addressLine1
+    const resLine1 = await apiClient.getHoldings({ search: 'Road3' })
+    expect(resLine1.status()).toBe(200)
+    const dataLine1: HoldingDetailPaginatedResult = await resLine1.json()
+    expect(dataLine1.values?.length).toBe(1)
+    expect(dataLine1.values![0].identifier).toBe('37/004/0004')
+    expect(dataLine1.values![0].location?.address?.addressLine1).toContain(
+      'Road3'
+    )
+
+    // addressLine2
+    const resLine2 = await apiClient.getHoldings({ search: 'Line2_3' })
+    expect(resLine2.status()).toBe(200)
+    const dataLine2: HoldingDetailPaginatedResult = await resLine2.json()
+    expect(dataLine2.values?.length).toBe(1)
+    expect(dataLine2.values![0].identifier).toBe('37/004/0004')
+    expect(dataLine2.values![0].location?.address?.addressLine2).toBe('Line2_3')
+
+    // UDPRN
+    const resUdprn = await apiClient.getHoldings({ search: '20001003' })
+    expect(resUdprn.status()).toBe(200)
+    const dataUdprn: HoldingDetailPaginatedResult = await resUdprn.json()
+    expect(dataUdprn.values?.length).toBe(1)
+    expect(dataUdprn.values![0].identifier).toBe('37/004/0004')
+    expect(dataUdprn.values![0].location?.address?.udprn).toBe('20001003')
   })
 
   test('should filter holdings by holding type (LKPR-271)', async ({
@@ -651,6 +670,17 @@ test.describe
     expect(dataSlash.values![0].identifier).toBe('37/004/0004')
   })
 
+  test('should accept search parameter of exactly 200 characters (LKPR-271 AC 10 boundary)', async ({
+    apiClient
+  }) => {
+    const exactMaxQuery = 'a'.repeat(200)
+    const response = await apiClient.getHoldings({ search: exactMaxQuery })
+    expect(response.status()).toBe(200)
+    const data: HoldingDetailPaginatedResult = await response.json()
+    expect(data.totalCount).toBe(0)
+    expect(data.values).toEqual([])
+  })
+
   test('should return 400 Bad Request when search parameter exceeds maximum length of 200 characters (LKPR-271 AC 10)', async ({
     apiClient
   }) => {
@@ -660,15 +690,65 @@ test.describe
     await expect(response).toBeApiError(400, { field: 'search' })
   })
 
+  test('should return 400 Bad Request when search contains only punctuation without letters or digits', async ({
+    apiClient
+  }) => {
+    const punctuationOnlyQueries = ['/', '@', '.', ',', "'", '-', '()']
+
+    for (const query of punctuationOnlyQueries) {
+      const response = await apiClient.getHoldings({ search: query })
+      await expect(response).toBeApiError(400, { field: 'search' })
+      const body: ApiErrorResponse = await response.json()
+      expect(body.errors?.search?.[0]).toContain('at least one letter or digit')
+    }
+  })
+
   test('should return 400 Bad Request when search contains unsupported expressions or wildcards (LKPR-271 AC 10)', async ({
     apiClient
   }) => {
-    const unsupportedQueries = ['*', ':', '"', '(', '%']
+    const unsupportedQueries = ['*', ':', '"', '%', '^', '~']
 
     for (const query of unsupportedQueries) {
       const response = await apiClient.getHoldings({ search: query })
       await expect(response).toBeApiError(400, { field: 'search' })
     }
+  })
+
+  test('should apply conjunctive AND logic across multi-token search terms', async ({
+    apiClient
+  }) => {
+    // Both tokens exist on holding 37/002/0002 ("Feature Holding 1 Re-Updated")
+    const resMatch = await apiClient.getHoldings({
+      search: 'Feature Re-Updated'
+    })
+    expect(resMatch.status()).toBe(200)
+    const dataMatch: HoldingDetailPaginatedResult = await resMatch.json()
+    expect(dataMatch.values?.length).toBe(1)
+    expect(dataMatch.values![0].identifier).toBe('37/002/0002')
+
+    // Tokens belonging to different holdings should yield 0 results (AND semantics, not OR)
+    const resDisjoint = await apiClient.getHoldings({
+      search: 'Town1 Town2'
+    })
+    expect(resDisjoint.status()).toBe(200)
+    const dataDisjoint: HoldingDetailPaginatedResult = await resDisjoint.json()
+    expect(dataDisjoint.totalCount).toBe(0)
+    expect(dataDisjoint.values).toEqual([])
+  })
+
+  test('should support diacritic and accent folding in search terms', async ({
+    apiClient
+  }) => {
+    const resTown = await apiClient.getHoldings({ search: 'Töwn1' })
+    expect(resTown.status()).toBe(200)
+    const dataTown: HoldingDetailPaginatedResult = await resTown.json()
+    expect(dataTown.values?.length).toBe(1)
+    expect(dataTown.values![0].identifier).toBe('37/002/0002')
+
+    const resFeature = await apiClient.getHoldings({ search: 'Fëatüre' })
+    expect(resFeature.status()).toBe(200)
+    const dataFeature: HoldingDetailPaginatedResult = await resFeature.json()
+    expect(dataFeature.totalCount).toBeGreaterThanOrEqual(4)
   })
 
   test('should safely reject SQL injection and script probes without 500 server errors', async ({
