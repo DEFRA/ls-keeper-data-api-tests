@@ -171,9 +171,14 @@ export function definePipelineTestSuite(config: PipelineSuiteConfig) {
         expect(columnTypes.EASTING).toMatch(/^(BIGINT|INTEGER|DOUBLE|DECIMAL)/i)
       }
       if ('NORTHING' in columnTypes) {
-        expect(columnTypes.NORTHING).toMatch(
-          /^(BIGINT|INTEGER|DOUBLE|DECIMAL)/i
-        )
+        if (datasetName === 'amls2_port') {
+          // Poole Port northing "090200" preserves leading zero as VARCHAR
+          expect(columnTypes.NORTHING).toBe('VARCHAR')
+        } else {
+          expect(columnTypes.NORTHING).toMatch(
+            /^(BIGINT|INTEGER|DOUBLE|DECIMAL)/i
+          )
+        }
       }
 
       if (datasetName.startsWith('cts_')) {
