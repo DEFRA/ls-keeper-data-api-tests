@@ -388,7 +388,7 @@ test.describe
     expect(dataShared.totalCount).toBeGreaterThanOrEqual(5)
   })
 
-  test('should filter holdings by formatted and normalized unslashed CPH identifier (LKPR-271 AC 4)', async ({
+  test('should filter holdings by full, unslashed, spaced, and partial CPH formats (LKPR-326 AC 1, AC 2)', async ({
     apiClient
   }) => {
     // Slashed CPH
@@ -405,9 +405,36 @@ test.describe
       await resUnslashed.json()
     expect(dataUnslashed.values?.length).toBe(1)
     expect(dataUnslashed.values![0].identifier).toBe('37/003/0003')
+
+    // Spaced CPH
+    const resSpaced = await apiClient.getHoldings({ search: '37 003 0003' })
+    expect(resSpaced.status()).toBe(200)
+    const dataSpaced: HoldingDetailPaginatedResult = await resSpaced.json()
+    expect(dataSpaced.values?.length).toBe(1)
+    expect(dataSpaced.values![0].identifier).toBe('37/003/0003')
+
+    // The three full-CPH formats return identical results (AC 2)
+    expect(dataSlashed.values).toEqual(dataUnslashed.values)
+    expect(dataSlashed.values).toEqual(dataSpaced.values)
+
+    // Partial holding segment (last 4 digits)
+    const resHoldingSeg = await apiClient.getHoldings({ search: '0003' })
+    expect(resHoldingSeg.status()).toBe(200)
+    const dataHoldingSeg: HoldingDetailPaginatedResult =
+      await resHoldingSeg.json()
+    expect(dataHoldingSeg.values?.length).toBe(1)
+    expect(dataHoldingSeg.values![0].identifier).toBe('37/003/0003')
+
+    // Partial parish/holding segment
+    const resParishSeg = await apiClient.getHoldings({ search: '003/0003' })
+    expect(resParishSeg.status()).toBe(200)
+    const dataParishSeg: HoldingDetailPaginatedResult =
+      await resParishSeg.json()
+    expect(dataParishSeg.values?.length).toBe(1)
+    expect(dataParishSeg.values![0].identifier).toBe('37/003/0003')
   })
 
-  test('should filter holdings by address post town and locality (LKPR-271 AC 5)', async ({
+  test('should filter holdings by address post town and locality (LKPR-326 AC 1, AC 5)', async ({
     apiClient
   }) => {
     const resTown = await apiClient.getHoldings({ search: 'Town2' })
@@ -427,9 +454,10 @@ test.describe
     )
   })
 
-  test('should filter holdings by postcode with and without spaces (LKPR-271 AC 5)', async ({
+  test('should filter holdings by postcode with and without spaces, and outward/inward codes (LKPR-326 AC 6)', async ({
     apiClient
   }) => {
+    // Full postcode with space
     const resPostcodeSpace = await apiClient.getHoldings({
       search: 'CPH02 102'
     })
@@ -439,6 +467,7 @@ test.describe
     expect(dataSpace.values?.length).toBe(1)
     expect(dataSpace.values![0].identifier).toBe('37/003/0003')
 
+    // Full postcode without space
     const resPostcodeNoSpace = await apiClient.getHoldings({
       search: 'CPH02102'
     })
@@ -447,108 +476,135 @@ test.describe
       await resPostcodeNoSpace.json()
     expect(dataNoSpace.values?.length).toBe(1)
     expect(dataNoSpace.values![0].identifier).toBe('37/003/0003')
+
+    // Outward code
+    const resOutward = await apiClient.getHoldings({ search: 'CPH02' })
+    expect(resOutward.status()).toBe(200)
+    const dataOutward: HoldingDetailPaginatedResult = await resOutward.json()
+    expect(dataOutward.values?.length).toBe(1)
+    expect(dataOutward.values![0].identifier).toBe('37/003/0003')
+
+    // Inward code
+    const resInward = await apiClient.getHoldings({ search: '102' })
+    expect(resInward.status()).toBe(200)
+    const dataInward: HoldingDetailPaginatedResult = await resInward.json()
+    expect(dataInward.values?.length).toBe(1)
+    expect(dataInward.values![0].identifier).toBe('37/003/0003')
+
+    // Case-insensitive
+    const resLower = await apiClient.getHoldings({ search: 'cph02 102' })
+    expect(resLower.status()).toBe(200)
+    const dataLower: HoldingDetailPaginatedResult = await resLower.json()
+    expect(dataLower.values?.length).toBe(1)
+    expect(dataLower.values![0].identifier).toBe('37/003/0003')
   })
 
-  test('should filter holdings by address lines and UDPRN (LKPR-271 AC 5)', async ({
+  test('should filter holdings by address line 1 and address line 2 (LKPR-326 AC 1, AC 5)', async ({
     apiClient
   }) => {
-    // addressLine1
-    const resLine1 = await apiClient.getHoldings({ search: 'Road3' })
+    // addressLine1 (SAON: 1A-10B)
+    const resLine1 = await apiClient.getHoldings({ search: '1A-10B' })
     expect(resLine1.status()).toBe(200)
     const dataLine1: HoldingDetailPaginatedResult = await resLine1.json()
-    expect(dataLine1.values?.length).toBe(1)
-    expect(dataLine1.values![0].identifier).toBe('37/004/0004')
-    expect(dataLine1.values![0].location?.address?.addressLine1).toContain(
-      'Road3'
-    )
+    expect(dataLine1.totalCount).toBeGreaterThanOrEqual(1)
+    const identifiers = (dataLine1.values || []).map((h) => h.identifier)
+    expect(identifiers).toContain('37/004/0004')
 
-    // addressLine2
-    const resLine2 = await apiClient.getHoldings({ search: 'Line2_3' })
+    // addressLine2 (Holding Street 3)
+    const resLine2 = await apiClient.getHoldings({ search: 'Holding Street 3' })
     expect(resLine2.status()).toBe(200)
     const dataLine2: HoldingDetailPaginatedResult = await resLine2.json()
     expect(dataLine2.values?.length).toBe(1)
     expect(dataLine2.values![0].identifier).toBe('37/004/0004')
-    expect(dataLine2.values![0].location?.address?.addressLine2).toBe('Line2_3')
-
-    // UDPRN
-    const resUdprn = await apiClient.getHoldings({ search: '20001003' })
-    expect(resUdprn.status()).toBe(200)
-    const dataUdprn: HoldingDetailPaginatedResult = await resUdprn.json()
-    expect(dataUdprn.values?.length).toBe(1)
-    expect(dataUdprn.values![0].identifier).toBe('37/004/0004')
-    expect(dataUdprn.values![0].location?.address?.udprn).toBe('20001003')
+    expect(dataLine2.values![0].location?.address?.addressLine2).toContain(
+      'Holding Street 3'
+    )
   })
 
-  test('should filter holdings by holding type (LKPR-271)', async ({
+  test('should verify excluded fields return 0 search matches while holdingType remains available for sorting (LKPR-326 AC 9, AC 12)', async ({
     apiClient
   }) => {
-    const response = await apiClient.getHoldings({ search: 'main' })
-    expect(response.status()).toBe(200)
-    const data: HoldingDetailPaginatedResult = await response.json()
-    expect(data.totalCount).toBeGreaterThanOrEqual(1)
-    for (const holding of data.values!) {
-      expect(holding.holdingType?.toLowerCase()).toBe('main')
+    // Excluded fields per AC 9: email, telephone/mobile, UDPRN, OS map reference, personal names, party identifiers, holding type
+    const excludedQueries = [
+      '25000003', // UDPRN
+      'main', // holdingType
+      'permanent', // holdingType
+      'C3700002', // party identifier (customerNumber)
+      'PartyFamily2', // personal last name
+      'PartyGiven2', // personal first name
+      'single.owner@example.test', // email
+      '37123402', // telephone
+      'TA6000060000' // osMapReference
+    ]
+
+    for (const query of excludedQueries) {
+      const response = await apiClient.getHoldings({ search: query })
+      expect(response.status()).toBe(200)
+      const data: HoldingDetailPaginatedResult = await response.json()
+      expect(
+        data.totalCount,
+        `Expected search for excluded field "${query}" to return 0 matches`
+      ).toBe(0)
+      expect(data.values).toEqual([])
     }
+
+    // Holding type remains available as a sorting option (AC 9 & AC 12)
+    const sortResponse = await apiClient.getHoldings({
+      order: 'holdingType',
+      sort: 'asc'
+    })
+    expect(sortResponse.status()).toBe(200)
+    const sortData: HoldingDetailPaginatedResult = await sortResponse.json()
+    expect(sortData.totalCount).toBeGreaterThanOrEqual(1)
   })
 
-  test('should filter holdings by associated party customer number, organisation, and person names (LKPR-271 AC 6)', async ({
+  test('should filter holdings by associated business and organisation name (LKPR-326 AC 1, AC 3)', async ({
     apiClient
   }) => {
-    // Customer number
-    const resCust = await apiClient.getHoldings({ search: 'C3700002' })
-    expect(resCust.status()).toBe(200)
-    const dataCust: HoldingDetailPaginatedResult = await resCust.json()
-    expect(dataCust.values?.length).toBe(1)
-    expect(dataCust.values![0].identifier).toBe('37/003/0003')
-
-    // Organisation name
     const resOrg = await apiClient.getHoldings({ search: 'PartyOrg2' })
     expect(resOrg.status()).toBe(200)
     const dataOrg: HoldingDetailPaginatedResult = await resOrg.json()
     expect(dataOrg.values?.length).toBe(1)
     expect(dataOrg.values![0].identifier).toBe('37/003/0003')
 
-    // Family name
-    const resFamily = await apiClient.getHoldings({ search: 'PartyFamily2' })
-    expect(resFamily.status()).toBe(200)
-    const dataFamily: HoldingDetailPaginatedResult = await resFamily.json()
-    expect(dataFamily.values?.length).toBe(1)
-    expect(dataFamily.values![0].identifier).toBe('37/003/0003')
-
-    // Given name
-    const resGiven = await apiClient.getHoldings({ search: 'PartyGiven2' })
-    expect(resGiven.status()).toBe(200)
-    const dataGiven: HoldingDetailPaginatedResult = await resGiven.json()
-    expect(dataGiven.values?.length).toBe(1)
-    expect(dataGiven.values![0].identifier).toBe('37/003/0003')
+    // Partial business name
+    const resPartial = await apiClient.getHoldings({ search: 'PartyOrg' })
+    expect(resPartial.status()).toBe(200)
+    const dataPartial: HoldingDetailPaginatedResult = await resPartial.json()
+    expect(dataPartial.totalCount).toBeGreaterThanOrEqual(1)
   })
 
-  test('should filter holdings by associated party contact details (email and telephone)', async ({
+  test('should filter holdings by herd mark with case-insensitivity (LKPR-326 AC 1, AC 7)', async ({
     apiClient
   }) => {
-    // Email matching across multiple associated holdings
-    const resEmail = await apiClient.getHoldings({
-      search: 'single.owner@example.test'
-    })
-    expect(resEmail.status()).toBe(200)
-    const dataEmail: HoldingDetailPaginatedResult = await resEmail.json()
-    expect(dataEmail.values?.length).toBe(2)
-    const ids = dataEmail.values!.map((h) => h.identifier).sort()
-    expect(ids).toEqual(['37/004/0004', '37/005/0005'])
+    // Herd mark exact
+    const resHerd = await apiClient.getHoldings({ search: 'H3700003' })
+    expect(resHerd.status()).toBe(200)
+    const dataHerd: HoldingDetailPaginatedResult = await resHerd.json()
+    expect(dataHerd.values?.length).toBe(1)
+    expect(dataHerd.values![0].identifier).toBe('37/004/0004')
 
-    // Telephone
-    const resTel = await apiClient.getHoldings({ search: '37123402' })
-    expect(resTel.status()).toBe(200)
-    const dataTel: HoldingDetailPaginatedResult = await resTel.json()
-    expect(dataTel.values?.length).toBe(1)
-    expect(dataTel.values![0].identifier).toBe('37/003/0003')
+    // Herd mark lowercase
+    const resHerdLower = await apiClient.getHoldings({ search: 'h3700003' })
+    expect(resHerdLower.status()).toBe(200)
+    const dataHerdLower: HoldingDetailPaginatedResult =
+      await resHerdLower.json()
+    expect(dataHerdLower.values?.length).toBe(1)
+    expect(dataHerdLower.values![0].identifier).toBe('37/004/0004')
+
+    // Another herd mark
+    const resHerd1 = await apiClient.getHoldings({ search: 'H3700001' })
+    expect(resHerd1.status()).toBe(200)
+    const dataHerd1: HoldingDetailPaginatedResult = await resHerd1.json()
+    expect(dataHerd1.values?.length).toBe(1)
+    expect(dataHerd1.values![0].identifier).toBe('37/002/0002')
   })
 
-  test('should paginate search results and calculate pagination metadata based on filtered count (LKPR-271 AC 7)', async ({
+  test('should paginate search results and calculate pagination metadata including pageSize 25 (LKPR-326 AC 13, AC 14)', async ({
     apiClient
   }) => {
     const page1Res = await apiClient.getHoldings({
-      search: 'main',
+      search: 'Feature',
       page: 1,
       pageSize: 2
     })
@@ -564,7 +620,7 @@ test.describe
     expect(page1Data.hasPreviousPage).toBe(false)
 
     const page2Res = await apiClient.getHoldings({
-      search: 'main',
+      search: 'Feature',
       page: 2,
       pageSize: 2
     })
@@ -578,14 +634,33 @@ test.describe
     const idsPage2 = page2Data.values!.map((v) => v.identifier)
     const intersection = idsPage1.filter((id) => idsPage2.includes(id))
     expect(intersection).toEqual([])
+
+    // Verify pageSize=25 requirement (LKPR-326 AC 13)
+    const res25 = await apiClient.getHoldings({
+      search: 'Feature',
+      pageSize: 25
+    })
+    expect(res25.status()).toBe(200)
+    const data25: HoldingDetailPaginatedResult = await res25.json()
+    expect(data25.pageSize).toBe(25)
+    expect(data25.count).toBe(data25.totalCount)
+    expect(data25.hasNextPage).toBe(false)
   })
 
-  test('should sort search results in ascending and descending order (LKPR-271 AC 8)', async ({
+  test('should sort search results in ascending and descending order and default to CPH ascending (LKPR-326 AC 12)', async ({
     apiClient
   }) => {
+    // Default sort without order parameter: CPH numerically ascending (AC 12)
+    const resDefault = await apiClient.getHoldings({ search: 'Feature' })
+    expect(resDefault.status()).toBe(200)
+    const dataDefault: HoldingDetailPaginatedResult = await resDefault.json()
+    const defaultIds = dataDefault.values!.map((v) => v.identifier)
+    const expectedAsc = [...defaultIds].sort((a, b) => a.localeCompare(b))
+    expect(defaultIds).toEqual(expectedAsc)
+
     // Sort descending by CPH
     const resDesc = await apiClient.getHoldings({
-      search: 'main',
+      search: 'Feature',
       order: 'cph',
       sort: 'desc'
     })
@@ -597,7 +672,7 @@ test.describe
 
     // Sort ascending by name
     const resAscName = await apiClient.getHoldings({
-      search: 'main',
+      search: 'Feature',
       order: 'name',
       sort: 'asc'
     })
@@ -714,41 +789,61 @@ test.describe
     }
   })
 
-  test('should apply conjunctive AND logic across multi-token search terms', async ({
+  test('should enforce consecutive whole-term matching within a single field (LKPR-326 AC 4)', async ({
     apiClient
   }) => {
-    // Both tokens exist on holding 37/002/0002 ("Feature Holding 1 Re-Updated")
-    const resMatch = await apiClient.getHoldings({
+    // Multi-word term appearing consecutively in the submitted order within holding name
+    const resConsecutive = await apiClient.getHoldings({
+      search: 'Feature 1 Re-Updated'
+    })
+    expect(resConsecutive.status()).toBe(200)
+    const dataConsecutive: HoldingDetailPaginatedResult =
+      await resConsecutive.json()
+    expect(dataConsecutive.values?.length).toBe(1)
+    expect(dataConsecutive.values![0].identifier).toBe('37/002/0002')
+
+    // Non-consecutive words within the same field must return 0 results (AC 4)
+    const resNonConsecutive = await apiClient.getHoldings({
       search: 'Feature Re-Updated'
     })
-    expect(resMatch.status()).toBe(200)
-    const dataMatch: HoldingDetailPaginatedResult = await resMatch.json()
-    expect(dataMatch.values?.length).toBe(1)
-    expect(dataMatch.values![0].identifier).toBe('37/002/0002')
+    expect(resNonConsecutive.status()).toBe(200)
+    const dataNonConsecutive: HoldingDetailPaginatedResult =
+      await resNonConsecutive.json()
+    expect(dataNonConsecutive.totalCount).toBe(0)
+    expect(dataNonConsecutive.values).toEqual([])
 
-    // Tokens belonging to different holdings should yield 0 results (AND semantics, not OR)
-    const resDisjoint = await apiClient.getHoldings({
-      search: 'Town1 Town2'
+    // Terms spanning across different fields or holdings must return 0 results (AC 4)
+    const resCrossField = await apiClient.getHoldings({
+      search: 'Town1 Locality2'
     })
-    expect(resDisjoint.status()).toBe(200)
-    const dataDisjoint: HoldingDetailPaginatedResult = await resDisjoint.json()
-    expect(dataDisjoint.totalCount).toBe(0)
-    expect(dataDisjoint.values).toEqual([])
+    expect(resCrossField.status()).toBe(200)
+    const dataCrossField: HoldingDetailPaginatedResult =
+      await resCrossField.json()
+    expect(dataCrossField.totalCount).toBe(0)
+    expect(dataCrossField.values).toEqual([])
   })
 
-  test('should support diacritic and accent folding in search terms', async ({
+  test('should return unique holdings and accurate totalCount without duplication (LKPR-326 AC 11)', async ({
+    apiClient
+  }) => {
+    // Term matching multiple fields on holding 37/002/0002 (name and address)
+    const resUnique = await apiClient.getHoldings({ search: 'Feature 1' })
+    expect(resUnique.status()).toBe(200)
+    const dataUnique: HoldingDetailPaginatedResult = await resUnique.json()
+
+    expect(dataUnique.values?.length).toBe(1)
+    expect(dataUnique.totalCount).toBe(1)
+    expect(dataUnique.values![0].identifier).toBe('37/002/0002')
+  })
+
+  test('should treat non-matching diacritics as distinct characters without error', async ({
     apiClient
   }) => {
     const resTown = await apiClient.getHoldings({ search: 'Töwn1' })
     expect(resTown.status()).toBe(200)
     const dataTown: HoldingDetailPaginatedResult = await resTown.json()
-    expect(dataTown.values?.length).toBe(1)
-    expect(dataTown.values![0].identifier).toBe('37/002/0002')
-
-    const resFeature = await apiClient.getHoldings({ search: 'Fëatüre' })
-    expect(resFeature.status()).toBe(200)
-    const dataFeature: HoldingDetailPaginatedResult = await resFeature.json()
-    expect(dataFeature.totalCount).toBeGreaterThanOrEqual(4)
+    expect(dataTown.totalCount).toBe(0)
+    expect(dataTown.values).toEqual([])
   })
 
   test('should safely reject SQL injection and script probes without 500 server errors', async ({
