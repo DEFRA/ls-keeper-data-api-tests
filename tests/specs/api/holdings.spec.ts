@@ -42,28 +42,72 @@ test.describe
     const firstHolding: HoldingDetail = data.values![0]
 
     expect(firstHolding.identifier).toMatch(/^\d{2}\/\d{3}\/\d{4}$/)
+    expect(firstHolding.holdingType).not.toBeNull()
+    expect(typeof firstHolding.holdingType).toBe('string')
 
-    if (firstHolding.holdingType !== null) {
-      expect(typeof firstHolding.holdingType).toBe('string')
-    }
-    if (firstHolding.name !== null) {
-      expect(typeof firstHolding.name).toBe('string')
-    }
+    expect(firstHolding.name).not.toBeNull()
+    expect(typeof firstHolding.name).toBe('string')
 
-    if (firstHolding.startDate !== null) {
-      expect(firstHolding.startDate).toBeIso8601Utc()
-    }
-    if (firstHolding.endDate !== null) {
-      expect(firstHolding.endDate).toBeIso8601Utc()
-    }
+    expect(firstHolding.startDate).not.toBeNull()
+    expect(firstHolding.startDate).toBeIso8601Utc()
+    expect(firstHolding.endDate).toBeNull()
 
     expect(firstHolding.location).toBeDefined()
+    expect(firstHolding.location.easting).not.toBeNull()
+    expect(typeof firstHolding.location.easting).toBe('number')
+    expect(Number.isInteger(firstHolding.location.easting)).toBe(true)
+
+    expect(firstHolding.location.northing).not.toBeNull()
+    expect(typeof firstHolding.location.northing).toBe('number')
+    expect(Number.isInteger(firstHolding.location.northing)).toBe(true)
+
     expect(firstHolding.location.address).toBeDefined()
-    if (firstHolding.location.address.country !== null) {
-      expect(['England', 'Scotland', 'Wales']).toContain(
-        firstHolding.location.address.country
-      )
+    expect(firstHolding.location.address.udprn).toBeNull()
+
+    expect(firstHolding.location.address.country).not.toBeNull()
+    expect(['England', 'Scotland', 'Wales']).toContain(
+      firstHolding.location.address.country
+    )
+
+    let populatedEastingCount = 0
+    let populatedNorthingCount = 0
+    let populatedUdprnCount = 0
+    let nullUdprnCount = 0
+
+    for (const holding of data.values!) {
+      if (
+        holding.location?.easting !== null &&
+        holding.location?.easting !== undefined
+      ) {
+        expect(typeof holding.location.easting).toBe('number')
+        expect(Number.isInteger(holding.location.easting)).toBe(true)
+        populatedEastingCount++
+      }
+      if (
+        holding.location?.northing !== null &&
+        holding.location?.northing !== undefined
+      ) {
+        expect(typeof holding.location.northing).toBe('number')
+        expect(Number.isInteger(holding.location.northing)).toBe(true)
+        populatedNorthingCount++
+      }
+      if (
+        holding.location?.address?.udprn !== null &&
+        holding.location?.address?.udprn !== undefined
+      ) {
+        expect(typeof holding.location.address.udprn).toBe('number')
+        expect(Number.isInteger(holding.location.address.udprn)).toBe(true)
+        populatedUdprnCount++
+      } else {
+        nullUdprnCount++
+      }
     }
+
+    // Verify the collection contains both populated and nullable integer columns without vacuous skips
+    expect(populatedEastingCount).toBeGreaterThan(0)
+    expect(populatedNorthingCount).toBeGreaterThan(0)
+    expect(populatedUdprnCount).toBeGreaterThan(0)
+    expect(nullUdprnCount).toBeGreaterThan(0)
 
     expect(Array.isArray(firstHolding.associations)).toBe(true)
     for (const assoc of firstHolding.associations) {

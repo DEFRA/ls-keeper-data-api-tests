@@ -17,7 +17,7 @@ export interface ApiErrorResponse {
 }
 
 export interface HoldingAddress {
-  udprn: string | null
+  udprn: number | null
   addressLine1: string | null
   addressLine2: string | null
   postTown: string | null

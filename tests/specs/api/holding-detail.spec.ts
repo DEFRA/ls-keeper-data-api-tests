@@ -13,35 +13,35 @@ test.describe
 
     // Root identifiers and metadata
     expect(data.identifier).toBe('37/004/0004')
-    if (data.holdingType !== null) {
-      expect(typeof data.holdingType).toBe('string')
-    }
+    expect(data.holdingType).not.toBeNull()
+    expect(typeof data.holdingType).toBe('string')
 
     // Dates serialise as ISO-8601 UTC (AC 6)
-    if (data.startDate !== null) {
-      expect(data.startDate).toBeIso8601Utc()
-    }
-    if (data.endDate !== null) {
-      expect(data.endDate).toBeIso8601Utc()
-    }
+    expect(data.startDate).not.toBeNull()
+    expect(data.startDate).toBeIso8601Utc()
+    expect(data.endDate).toBeNull()
 
     // Location and coordinates
     expect(data.location).toBeDefined()
     expect(typeof data.location).toBe('object')
-    if (data.location.easting !== null) {
-      expect(typeof data.location.easting).toBe('number')
-    }
-    if (data.location.northing !== null) {
-      expect(typeof data.location.northing).toBe('number')
-    }
+    expect(data.location.easting).not.toBeNull()
+    expect(typeof data.location.easting).toBe('number')
+    expect(Number.isInteger(data.location.easting)).toBe(true)
+
+    expect(data.location.northing).not.toBeNull()
+    expect(typeof data.location.northing).toBe('number')
+    expect(Number.isInteger(data.location.northing)).toBe(true)
 
     // Address
     expect(data.location.address).toBeDefined()
-    if (data.location.address.country !== null) {
-      expect(['England', 'Scotland', 'Wales']).toContain(
-        data.location.address.country
-      )
-    }
+    expect(data.location.address.udprn).not.toBeNull()
+    expect(typeof data.location.address.udprn).toBe('number')
+    expect(Number.isInteger(data.location.address.udprn)).toBe(true)
+
+    expect(data.location.address.country).not.toBeNull()
+    expect(['England', 'Scotland', 'Wales']).toContain(
+      data.location.address.country
+    )
 
     // Associations
     expect(Array.isArray(data.associations)).toBe(true)
@@ -62,14 +62,11 @@ test.describe
 
     // Marks
     expect(Array.isArray(data.marks)).toBe(true)
+    expect(data.marks.length).toBeGreaterThan(0)
     for (const mark of data.marks) {
       expect(mark.mark).toBeTruthy()
-      if (mark.startDate !== null) {
-        expect(mark.startDate).toBeIso8601Utc()
-      }
-      if (mark.endDate !== null) {
-        expect(mark.endDate).toBeIso8601Utc()
-      }
+      expect(mark.startDate).not.toBeNull()
+      expect(mark.startDate).toBeIso8601Utc()
       expect(Array.isArray(mark.species)).toBe(true)
     }
   })
@@ -138,9 +135,11 @@ test.describe
     expect(response.status()).toBe(200)
     const data: HoldingDetail = await response.json()
 
+    let foundOwnerOrKeeperRole = false
     for (const association of data.associations) {
       for (const role of association.roles) {
         if (role.code === 'owner' || role.code === 'keeper') {
+          foundOwnerOrKeeperRole = true
           expect(Array.isArray(role.species)).toBe(true)
           for (const sp of role.species) {
             expect(typeof sp).toBe('string')
@@ -149,6 +148,7 @@ test.describe
         }
       }
     }
+    expect(foundOwnerOrKeeperRole).toBe(true)
   })
 
   test('should serialize collections as empty arrays rather than null when empty (AC 9)', async ({
@@ -229,5 +229,36 @@ test.describe
     })
 
     expect(response.status()).toBe(401)
+  })
+
+  test('should accurately read strongly-typed INTEGER columns (udprn, easting, northing) and preserve NULL as null (LKPR-268)', async ({
+    apiClient
+  }) => {
+    // 1. Holding with populated integer coordinates and UDPRN (LKPR-268 AC 1 & AC 2)
+    const resPopulated = await apiClient.getHolding('37', '004', '0004')
+    expect(resPopulated.status()).toBe(200)
+    const dataPopulated: HoldingDetail = await resPopulated.json()
+
+    expect(typeof dataPopulated.location.easting).toBe('number')
+    expect(dataPopulated.location.easting).toBe(400003)
+    expect(typeof dataPopulated.location.northing).toBe('number')
+    expect(dataPopulated.location.northing).toBe(500003)
+    expect(typeof dataPopulated.location.address.udprn).toBe('number')
+    expect(dataPopulated.location.address.udprn).toBe(25000003)
+
+    // Dates converted from SQLite integer epoch seconds to ISO-8601 UTC
+    expect(dataPopulated.startDate).toBe('2025-01-01T00:00:00+00:00')
+    expect(dataPopulated.endDate).toBeNull()
+
+    // 2. Holding with NULL integer columns ("NULL stays NULL" edge case)
+    const resNull = await apiClient.getHolding('03', '202', '0021')
+    expect(resNull.status()).toBe(200)
+    const dataNull: HoldingDetail = await resNull.json()
+
+    expect(dataNull.location.address.udprn).toBeNull()
+    expect(dataNull.endDate).toBeNull()
+    expect(dataNull.marks).toBeDefined()
+    expect(dataNull.marks!.length).toBeGreaterThan(0)
+    expect(dataNull.marks![0].endDate).toBeNull()
   })
 })

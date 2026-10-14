@@ -117,23 +117,22 @@ export function definePipelineTestSuite(config: PipelineSuiteConfig) {
       const discoverStage = (importStatus.stages || []).find(
         (s) => s.name === 'discover'
       )
-      if (discoverStage && typeof discoverStage.itemCount === 'number') {
-        expect(
-          discoverStage.itemCount,
-          `ETL Discover stage found 0 matching files for ${datasetName}. The uploaded file was not picked up by the pipeline.`
-        ).toBeGreaterThan(0)
-      }
+      expect(discoverStage).toBeDefined()
+      expect(typeof discoverStage!.itemCount).toBe('number')
+      expect(
+        discoverStage!.itemCount,
+        `ETL Discover stage found 0 matching files for ${datasetName}. The uploaded file was not picked up by the pipeline.`
+      ).toBeGreaterThan(0)
 
       const optimiseStage = (importStatus.stages || []).find(
         (s) => s.name === 'optimise'
       )
       expect(optimiseStage).toBeDefined()
-      if (optimiseStage && typeof optimiseStage.itemCount === 'number') {
-        expect(
-          optimiseStage.itemCount,
-          `ETL Optimise stage processed 0 parquet files for ${datasetName}.`
-        ).toBeGreaterThan(0)
-      }
+      expect(typeof optimiseStage!.itemCount).toBe('number')
+      expect(
+        optimiseStage!.itemCount,
+        `ETL Optimise stage processed 0 parquet files for ${datasetName}.`
+      ).toBeGreaterThan(0)
 
       // 2. Download resulting DuckDB database extract
       const duckDbBuffer = await etlClient.downloadDuckDb(
@@ -316,9 +315,9 @@ export function definePipelineTestSuite(config: PipelineSuiteConfig) {
         const discoverStage = (importStatus.stages || []).find(
           (s) => s.name === 'discover'
         )
-        if (discoverStage && typeof discoverStage.itemCount === 'number') {
-          expect(discoverStage.itemCount).toBeGreaterThan(0)
-        }
+        expect(discoverStage).toBeDefined()
+        expect(typeof discoverStage!.itemCount).toBe('number')
+        expect(discoverStage!.itemCount).toBeGreaterThan(0)
 
         const duckDbBuffer = await etlClient.downloadDuckDb(
           importStatus.presignedDuckDbUri
@@ -419,12 +418,11 @@ export function definePipelineTestSuite(config: PipelineSuiteConfig) {
           (s) => s.name === 'optimise'
         )
         expect(optimiseStage).toBeDefined()
-        if (optimiseStage && typeof optimiseStage.itemCount === 'number') {
-          expect(
-            optimiseStage.itemCount,
-            `ETL Optimise stage processed 0 parquet files for ${datasetName} during omitted-column delta.`
-          ).toBeGreaterThan(0)
-        }
+        expect(typeof optimiseStage!.itemCount).toBe('number')
+        expect(
+          optimiseStage!.itemCount,
+          `ETL Optimise stage processed 0 parquet files for ${datasetName} during omitted-column delta.`
+        ).toBeGreaterThan(0)
 
         const duckDbBuffer = await etlClient.downloadDuckDb(
           importStatus.presignedDuckDbUri
