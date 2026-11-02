@@ -53,7 +53,7 @@ setup(
     // Ingest all uploaded datasets into DuckDB and export to SQLite read model once
     await etlClient.importDataset()
 
-    // Trigger SQLite read-model cache refresh so the API picks up the fresh database
-    await apiClient.refreshSqliteCache('read-model', false)
+    // Trigger SQLite cache refresh (cache=all) so the API picks up the fresh read model
+    await apiClient.refreshSqliteCache('all', false)
   }
 )

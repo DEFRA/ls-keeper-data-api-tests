@@ -304,6 +304,21 @@ export class EtlClient {
   }
 
   /**
+   * Retrieves the latest presigned SQLite read-model download URL from the backend (GET /api/etl/staging/sqlite/latest)
+   */
+  async getLatestSqliteUrl(): Promise<string> {
+    const response = await this.get('api/etl/staging/sqlite/latest', {
+      headers: this.getHeaders()
+    })
+    expect(
+      response.ok(),
+      `Failed to get latest SQLite URL: HTTP ${response.status()} at [${response.url()}]: ${await response.text()}`
+    ).toBeTruthy()
+    const json = (await response.json()) as { downloadUrl?: string }
+    return json.downloadUrl || ''
+  }
+
+  /**
    * Downloads the DuckDB database file buffer from a presigned S3 URL or latest staging endpoint
    */
   async downloadDuckDb(presignedUrl?: string): Promise<Buffer> {

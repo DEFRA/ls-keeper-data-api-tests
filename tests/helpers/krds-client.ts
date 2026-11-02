@@ -268,10 +268,10 @@ export class KrdsApiClient {
 
   /**
    * POST /api/admin/sqlite-cache/refresh
-   * Forces the API to refresh its SQLite read-model and CPH caches from S3.
+   * Forces the API to refresh its SQLite read-model cache from S3.
    */
   async refreshSqliteCache(
-    cache: 'all' | 'cph' | 'read-model' = 'all',
+    cache: 'all' | 'read-model' = 'all',
     force = true,
     options: KrdsRequestOptions = {}
   ): Promise<APIResponse> {
