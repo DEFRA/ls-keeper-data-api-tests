@@ -1,6 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import { test as setup, expect } from '../fixtures/base.fixture.js'
+import { writeCleanseSetupState } from '../helpers/cleanse-client.js'
 
 interface SamHoldingSeedRow {
   cph: string
@@ -208,23 +209,10 @@ setup(
     expect(completedRun.recordsProcessed).toBeGreaterThan(0)
 
     // Persist run metadata for downstream Cleanse rule specs
-    const cacheDir = path.resolve('.cache')
-    if (!fs.existsSync(cacheDir)) {
-      fs.mkdirSync(cacheDir, { recursive: true })
-    }
-    const statePath = path.resolve(cacheDir, 'cleanse-setup.json')
-    fs.writeFileSync(
-      statePath,
-      JSON.stringify(
-        {
-          runId: completedRun.runId,
-          recordsProcessed: completedRun.recordsProcessed,
-          completedAtUtc: completedRun.finishedAtUtc
-        },
-        null,
-        2
-      ),
-      'utf8'
-    )
+    writeCleanseSetupState({
+      runId: completedRun.runId,
+      recordsProcessed: completedRun.recordsProcessed,
+      completedAtUtc: completedRun.finishedAtUtc
+    })
   }
 )

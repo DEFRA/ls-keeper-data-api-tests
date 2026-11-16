@@ -1,30 +1,15 @@
-import fs from 'fs'
-import path from 'path'
 import { test, expect } from '../../fixtures/base.fixture.js'
-import type {
-  CleanseIssueDto,
-  CleansePagedResult,
-  CleanseRuleDto
+import {
+  assertActiveCleanseIssue,
+  readCleanseSetupState,
+  type CleanseIssueDto,
+  type CleansePagedResult,
+  type CleanseRuleDto,
+  type CleanseSetupState
 } from '../../helpers/cleanse-client.js'
-
-interface CleanseSetupState {
-  runId: string
-  recordsProcessed: number
-  completedAtUtc: string
-}
 
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-const RULE_01_ISSUE_ID_REGEX = /^1-[A-Z2-7]{16}$/
-
-function readCleanseSetupState(): CleanseSetupState {
-  const statePath = path.resolve('.cache', 'cleanse-setup.json')
-  expect(
-    fs.existsSync(statePath),
-    `Expected Cleanse setup state file at ${statePath}. Run cleanse-setup first.`
-  ).toBe(true)
-  return JSON.parse(fs.readFileSync(statePath, 'utf8')) as CleanseSetupState
-}
 
 test.describe
   .serial('Cleanse Rule 1: No Cattle Unit in SAM — BSN, CTT, BFF (LKPR-182)', () => {
@@ -32,8 +17,6 @@ test.describe
 
   test.beforeAll(() => {
     setupState = readCleanseSetupState()
-    expect(setupState.runId).toBeTruthy()
-    expect(setupState.recordsProcessed).toBe(8)
   })
 
   test('should register Rule 1 in the active rule book with errorCode 01, priority 2, and description No-cattle-unit-in-Sam', async ({
@@ -78,16 +61,10 @@ test.describe
     expect(body.items).toHaveLength(1)
 
     const issue = body.items[0]
-    expect(issue.id).toMatch(RULE_01_ISSUE_ID_REGEX)
-    expect(issue.groupId).toBe('cts-sam')
-    expect(issue.ruleId).toBe('1')
-    expect(issue.runId).toBe(setupState.runId)
-    expect(issue.status).toBe('active')
-    expect(issue.workflowStatus).toBe('todo')
-    expect(issue.createdAtUtc).toBeIso8601Utc()
-    expect(issue.updatedAtUtc).toBeIso8601Utc()
-    expect(issue.activatedAtUtc).toBeIso8601Utc()
-    expect(issue.deactivatedAtUtc).toBeNull()
+    assertActiveCleanseIssue(issue, {
+      ruleId: '1',
+      runId: setupState.runId
+    })
 
     expect(issue.context).toMatchObject({
       cph: '31/124/0042',
@@ -130,16 +107,10 @@ test.describe
     expect(body.items).toHaveLength(1)
 
     const issue = body.items[0]
-    expect(issue.id).toMatch(RULE_01_ISSUE_ID_REGEX)
-    expect(issue.groupId).toBe('cts-sam')
-    expect(issue.ruleId).toBe('1')
-    expect(issue.runId).toBe(setupState.runId)
-    expect(issue.status).toBe('active')
-    expect(issue.workflowStatus).toBe('todo')
-    expect(issue.createdAtUtc).toBeIso8601Utc()
-    expect(issue.updatedAtUtc).toBeIso8601Utc()
-    expect(issue.activatedAtUtc).toBeIso8601Utc()
-    expect(issue.deactivatedAtUtc).toBeNull()
+    assertActiveCleanseIssue(issue, {
+      ruleId: '1',
+      runId: setupState.runId
+    })
 
     expect(issue.context).toMatchObject({
       cph: '21/173/0011',

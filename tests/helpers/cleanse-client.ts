@@ -1,5 +1,76 @@
+import fs from 'fs'
+import path from 'path'
 import { APIRequestContext, APIResponse, expect } from '@playwright/test'
 import { resolveCleanseBaseUrl } from './url-resolver.js'
+
+export interface CleanseSetupState {
+  runId: string
+  recordsProcessed: number
+  completedAtUtc: string | null
+}
+
+const CLEANSE_SETUP_STATE_PATH = path.resolve('.cache', 'cleanse-setup.json')
+
+/**
+ * Persists the completed Cleanse setup run metadata to `.cache/cleanse-setup.json`.
+ */
+export function writeCleanseSetupState(state: CleanseSetupState): void {
+  const cacheDir = path.dirname(CLEANSE_SETUP_STATE_PATH)
+  if (!fs.existsSync(cacheDir)) {
+    fs.mkdirSync(cacheDir, { recursive: true })
+  }
+  fs.writeFileSync(
+    CLEANSE_SETUP_STATE_PATH,
+    JSON.stringify(state, null, 2),
+    'utf8'
+  )
+}
+
+/**
+ * Reads and validates the Cleanse setup state written by `cleanse.setup.ts`.
+ */
+export function readCleanseSetupState(
+  expectedRecordsProcessed = 8
+): CleanseSetupState {
+  expect(
+    fs.existsSync(CLEANSE_SETUP_STATE_PATH),
+    `Expected Cleanse setup state file at ${CLEANSE_SETUP_STATE_PATH}. Run cleanse-setup first.`
+  ).toBe(true)
+
+  const state = JSON.parse(
+    fs.readFileSync(CLEANSE_SETUP_STATE_PATH, 'utf8')
+  ) as CleanseSetupState
+
+  expect(state.runId).toBeTruthy()
+  expect(state.recordsProcessed).toBe(expectedRecordsProcessed)
+  return state
+}
+
+/**
+ * Asserts the common envelope, lifecycle timestamps, and run linkage for an active Cleanse issue.
+ */
+export function assertActiveCleanseIssue(
+  issue: CleanseIssueDto,
+  options: {
+    ruleId: string
+    runId: string
+    groupId?: string
+  }
+): void {
+  const groupId = options.groupId ?? 'cts-sam'
+  const idPattern = new RegExp(`^${options.ruleId}-[A-Z2-7]{16}$`)
+
+  expect(issue.id).toMatch(idPattern)
+  expect(issue.groupId).toBe(groupId)
+  expect(issue.ruleId).toBe(options.ruleId)
+  expect(issue.runId).toBe(options.runId)
+  expect(issue.status).toBe('active')
+  expect(issue.workflowStatus).toBe('todo')
+  expect(issue.createdAtUtc).toBeIso8601Utc()
+  expect(issue.updatedAtUtc).toBeIso8601Utc()
+  expect(issue.activatedAtUtc).toBeIso8601Utc()
+  expect(issue.deactivatedAtUtc).toBeNull()
+}
 
 export interface CleansePagedResult<T> {
   items: T[]
