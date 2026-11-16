@@ -16,6 +16,7 @@
     "test": "playwright test",
     "test:bridge": "playwright test --project=bridge-etl",
     "test:api": "playwright test --project=krds-api",
+    "test:cleanse": "playwright test --project=cleanse",
     "test:ui": "playwright test --ui",
     "test:debug": "playwright test --debug",
     "test:github": "playwright test",

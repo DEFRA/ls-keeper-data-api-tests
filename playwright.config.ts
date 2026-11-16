@@ -47,6 +47,18 @@ export default defineConfig({
       testDir: './tests/specs/api',
       dependencies: ['api-setup'],
       timeout: 60000
+    },
+    {
+      name: 'cleanse-setup',
+      testDir: './tests/setup',
+      testMatch: /cleanse\.setup\.ts/,
+      timeout: 180000
+    },
+    {
+      name: 'cleanse',
+      testDir: './tests/specs/cleanse',
+      dependencies: ['cleanse-setup'],
+      timeout: 60000
     }
   ]
 })
