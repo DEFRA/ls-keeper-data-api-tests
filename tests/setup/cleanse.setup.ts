@@ -21,9 +21,9 @@ interface SamHoldingSeedRow {
   animalProductionUsageCode: string
 }
 
-function buildSamHoldingRow(row: SamHoldingSeedRow): string {
+function buildSamHoldingRow(row: SamHoldingSeedRow, batchId: string): string {
   return [
-    '1', // BATCH_ID
+    batchId, // BATCH_ID
     'I', // CHANGE_TYPE
     row.cph, // CPH
     row.featureName, // FEATURE_NAME
@@ -78,96 +78,121 @@ setup(
       'tests/data/LITP_SAMCPHHOLDING_BASELINE.csv'
     )
     const holdingRaw = fs.readFileSync(holdingFilePath, 'utf8')
+    const batchId = String(Math.floor(Date.now() / 1000))
 
     const cleanseHoldingRows = [
       // Rule 1 Positive #1: SAM holding has non-cattle species (SHP) -> Flagged with errorCode 01
-      buildSamHoldingRow({
-        cph: '31/124/0042',
-        featureName: 'FARM 1',
-        companyName: 'Cleanse Holdings 1',
-        addressPk: '25900001',
-        street: 'Farm Lane',
-        town: 'Test Town',
-        locality: 'Ironshire',
-        postcode: 'SW1A 1AA',
-        udprn: '25900001',
-        easting: '410001',
-        northing: '510001',
-        secondaryCph: '31/124/5042',
-        animalSpeciesCode: 'SHP',
-        animalProductionUsageCode: 'MEAT'
-      }),
+      buildSamHoldingRow(
+        {
+          cph: '31/124/0042',
+          featureName: 'FARM 1',
+          companyName: 'Cleanse Holdings 1',
+          addressPk: '25900001',
+          street: 'Farm Lane',
+          town: 'Test Town',
+          locality: 'Ironshire',
+          postcode: 'SW1A 1AA',
+          udprn: '25900001',
+          easting: '410001',
+          northing: '510001',
+          secondaryCph: '31/124/5042',
+          animalSpeciesCode: 'SHP',
+          animalProductionUsageCode: 'MEAT'
+        },
+        batchId
+      ),
       // Rule 1 Positive #2: SAM holding has no animal species code -> Flagged with errorCode 01
-      buildSamHoldingRow({
-        cph: '21/173/0011',
-        featureName: 'FARM 2',
-        companyName: 'Cleanse Holdings 2',
-        addressPk: '25900002',
-        street: 'Farm Lane',
-        town: 'Test Town',
-        locality: 'Brackenshire',
-        postcode: 'SW1A 1AA',
-        udprn: '25900002',
-        easting: '410002',
-        northing: '510002',
-        secondaryCph: '21/173/5011',
-        animalSpeciesCode: '',
-        animalProductionUsageCode: ''
-      }),
-      // Rule 1 Negative #1: SAM holding has Cattle (CTT) -> NOT flagged by Rule 1
-      buildSamHoldingRow({
-        cph: '32/199/9001',
-        featureName: 'FARM 4',
-        companyName: 'Cleanse Holdings 4',
-        addressPk: '25900004',
-        street: 'Farm Lane',
-        town: 'Test Town',
-        locality: 'Penshire',
-        postcode: 'SW1A 1AA',
-        udprn: '25900004',
-        easting: '410004',
-        northing: '510004',
-        secondaryCph: '32/199/5001',
-        animalSpeciesCode: 'CTT',
-        animalProductionUsageCode: 'MEAT'
-      }),
-      // Rule 1 Negative #2: SAM holding has Bison (BSN) -> NOT flagged by Rule 1
-      buildSamHoldingRow({
-        cph: '40/139/0012',
-        featureName: 'FARM 5',
-        companyName: 'Cleanse Holdings 5',
-        addressPk: '25900005',
-        street: 'Farm Lane',
-        town: 'Test Town',
-        locality: 'Valeshire',
-        postcode: 'SW1A 1AA',
-        udprn: '25900005',
-        easting: '410005',
-        northing: '510005',
-        secondaryCph: '40/139/5012',
-        animalSpeciesCode: 'BSN',
-        animalProductionUsageCode: 'MEAT'
-      }),
-      // Rule 1 Negative #3: SAM holding has Buffalo (BFF) -> NOT flagged by Rule 1
-      buildSamHoldingRow({
-        cph: '28/166/7000',
-        featureName: 'FARM 7',
-        companyName: 'Cleanse Holdings 7',
-        addressPk: '25900007',
-        street: 'Farm Lane',
-        town: 'Test Town',
-        locality: 'Oakshire',
-        postcode: 'SW1A 1AA',
-        udprn: '25900007',
-        easting: '410007',
-        northing: '510007',
-        secondaryCph: '28/166/5000',
-        animalSpeciesCode: 'BFF',
-        animalProductionUsageCode: 'MEAT'
-      })
+      buildSamHoldingRow(
+        {
+          cph: '21/173/0011',
+          featureName: 'FARM 2',
+          companyName: 'Cleanse Holdings 2',
+          addressPk: '25900002',
+          street: 'Farm Lane',
+          town: 'Test Town',
+          locality: 'Brackenshire',
+          postcode: 'SW1A 1AA',
+          udprn: '25900002',
+          easting: '410002',
+          northing: '510002',
+          secondaryCph: '21/173/5011',
+          animalSpeciesCode: '',
+          animalProductionUsageCode: ''
+        },
+        batchId
+      ),
+      // Rule 1 Negative #1 & Rule 3 Negative (AC02): SAM holding has Cattle (CTT) and 'Land At Farm 4' matching CTS 'FARM 4' after normalisation -> NOT flagged by Rule 1 or Rule 3
+      buildSamHoldingRow(
+        {
+          cph: '32/199/9001',
+          featureName: 'Land At Farm 4',
+          companyName: 'Cleanse Holdings 4',
+          addressPk: '25900004',
+          street: 'Farm Lane',
+          town: 'Test Town',
+          locality: 'Penshire',
+          postcode: 'SW1A 1AA',
+          udprn: '25900004',
+          easting: '410004',
+          northing: '510004',
+          secondaryCph: '32/199/5001',
+          animalSpeciesCode: 'CTT',
+          animalProductionUsageCode: 'MEAT'
+        },
+        batchId
+      ),
+      // Rule 1 Negative #2 & Rule 3 Positive #1 (AC01 Placeholder): SAM holding has Bison (BSN) and placeholder name 'Not Known' while PAON holds 'FARM 5' -> Flagged by Rule 3 (placeholder)
+      buildSamHoldingRow(
+        {
+          cph: '40/139/0012',
+          featureName: 'Not Known',
+          companyName: 'Cleanse Holdings 5',
+          addressPk: '25900005',
+          paonDescription: 'FARM 5',
+          street: 'Farm Lane',
+          town: 'Test Town',
+          locality: 'Valeshire',
+          postcode: 'SW1A 1AA',
+          udprn: '25900005',
+          easting: '410005',
+          northing: '510005',
+          secondaryCph: '40/139/5012',
+          animalSpeciesCode: 'BSN',
+          animalProductionUsageCode: 'MEAT'
+        },
+        batchId
+      ),
+      // Rule 1 Negative #3 & Rule 3 Positive #2 (AC01 Inconsistent Name): SAM holding has Buffalo (BFF) and 'Oakwood Grange' vs CTS 'FARM 7' -> Flagged by Rule 3 (different)
+      buildSamHoldingRow(
+        {
+          cph: '28/166/7000',
+          featureName: 'Oakwood Grange',
+          companyName: 'Cleanse Holdings 7',
+          addressPk: '25900007',
+          paonDescription: 'Oakwood Grange',
+          street: 'Farm Lane',
+          town: 'Test Town',
+          locality: 'Oakshire',
+          postcode: 'SW1A 1AA',
+          udprn: '25900007',
+          easting: '410007',
+          northing: '510007',
+          secondaryCph: '28/166/5000',
+          animalSpeciesCode: 'BFF',
+          animalProductionUsageCode: 'MEAT'
+        },
+        batchId
+      )
     ]
 
     const combinedHoldingContent = `${holdingRaw.trimEnd()}\n${cleanseHoldingRows.join('\n')}\n`
+
+    // Purge previous sam_cph_holdings files from external storage so earlier runs do not leave duplicate rows
+    await etlClient.purgeStorage({
+      dataset: 'sam_cph_holdings',
+      stage: 'all',
+      sourceType: 'external'
+    })
 
     // Upload SAM baseline datasets (with in-memory Cleanse holding rows)
     await etlClient.uploadFile(
