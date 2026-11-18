@@ -242,12 +242,14 @@ setup(
       sourceType: 'external'
     })
 
-    // Upload SAM baseline datasets (with in-memory Cleanse holding rows)
+    // Upload SAM baseline datasets (with in-memory Cleanse holding rows) and deltas (preserving KRDS API test state)
     await etlClient.uploadFile(
       'LITP_SAMCPHHOLDING_BASELINE.csv',
       undefined,
       combinedHoldingContent
     )
+    await etlClient.uploadFile('LITP_SAMCPHHOLDING_DELTA_1.csv')
+    await etlClient.uploadFile('LITP_SAMCPHHOLDING_DELTA_2.csv')
 
     // Append Cleanse Rule 10 holder rows in memory for correspondence address comparison
     const holderFilePath = path.resolve(

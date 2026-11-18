@@ -36,8 +36,10 @@ setup(
     const dynamicHerdRow = `1       |I          |H3700099|37/004/0004/01|Cattle             |MEAT               |C3700099       |C3700003        |2025-01-01                 |                          |12       |Months               |            |                         \n`
     const combinedHerdContent = `${herdRaw.trimEnd()}\n${dynamicHerdRow}`
 
-    // Upload the complete SAM dataset baseline
+    // Upload the complete SAM dataset baseline and deltas
     await etlClient.uploadFile('LITP_SAMCPHHOLDING_BASELINE.csv')
+    await etlClient.uploadFile('LITP_SAMCPHHOLDING_DELTA_1.csv')
+    await etlClient.uploadFile('LITP_SAMCPHHOLDING_DELTA_2.csv')
     await etlClient.uploadFile('LITP_SAMCPHHOLDER_BASELINE.csv')
     await etlClient.uploadFile(
       'LITP_SAMPARTY_BASELINE.csv',
