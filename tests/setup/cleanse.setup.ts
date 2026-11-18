@@ -67,6 +67,54 @@ function buildSamHoldingRow(row: SamHoldingSeedRow, batchId: string): string {
   ].join('|')
 }
 
+interface SamHolderSeedRow {
+  partyId: string
+  familyName: string
+  orgName: string
+  street: string
+  town: string
+  locality: string
+  postcode: string
+  udprn: string
+  cph: string
+}
+
+function buildSamHolderRow(row: SamHolderSeedRow): string {
+  return [
+    '1', // BATCH_ID
+    'I', // CHANGE_TYPE
+    row.partyId, // PARTY_ID
+    'MR', // PERSON_TITLE
+    'Cleanse', // PERSON_GIVEN_NAME
+    '', // PERSON_GIVEN_NAME2
+    'C', // PERSON_INITIALS
+    row.familyName, // PERSON_FAMILY_NAME
+    row.orgName, // ORGANISATION_NAME
+    '01234 567890', // TELEPHONE_NUMBER
+    '07123 456789', // MOBILE_NUMBER
+    `${row.partyId.toLowerCase()}@example.test`, // INTERNET_EMAIL_ADDRESS
+    '', // SAON_START_NUMBER
+    '', // SAON_START_NUMBER_SUFFIX
+    '', // SAON_END_NUMBER
+    '', // SAON_END_NUMBER_SUFFIX
+    '', // SAON_DESCRIPTION
+    '1', // PAON_START_NUMBER
+    '', // PAON_START_NUMBER_SUFFIX
+    '', // PAON_END_NUMBER
+    '', // PAON_END_NUMBER_SUFFIX
+    '', // PAON_DESCRIPTION
+    row.street, // STREET
+    row.town, // TOWN
+    row.locality, // LOCALITY
+    'ENGLAND', // UK_INTERNAL_CODE
+    row.postcode, // POSTCODE
+    'GB', // COUNTRY_CODE
+    'Y', // PREFERRED_CONTACT_METHOD_IND
+    row.udprn, // UDPRN
+    row.cph // CPHS
+  ].join('|')
+}
+
 setup(
   'ingest CTS and SAM datasets and execute Cleanse rules engine run',
   async ({ etlClient, cleanseClient }) => {
@@ -200,7 +248,73 @@ setup(
       undefined,
       combinedHoldingContent
     )
-    await etlClient.uploadFile('LITP_SAMCPHHOLDER_BASELINE.csv')
+
+    // Append Cleanse Rule 10 holder rows in memory for correspondence address comparison
+    const holderFilePath = path.resolve(
+      'tests/data/LITP_SAMCPHHOLDER_BASELINE.csv'
+    )
+    const holderRaw = fs.readFileSync(holderFilePath, 'utf8')
+    const cleanseHolderRows = [
+      // Rule 10 Positive: 32/199/9001 holder postcode 'EC1A 1BB' differs from CTS 'SW1A 1AA'
+      buildSamHolderRow({
+        partyId: 'C9900001',
+        familyName: 'HolderMismatch',
+        orgName: 'Cleanse Org 4',
+        street: '10 Fleet Street',
+        town: 'London',
+        locality: 'City',
+        postcode: 'EC1A 1BB',
+        udprn: '25990001',
+        cph: '32/199/9001'
+      }),
+      // Rule 10 Negative #1: 40/139/0012 holder postcode 'sw1a1aa' matches CTS 'SW1A 1AA' after normalisation
+      buildSamHolderRow({
+        partyId: 'C9900002',
+        familyName: 'HolderMatch',
+        orgName: 'Cleanse Org 5',
+        street: 'Farm Lane',
+        town: 'Test Town',
+        locality: 'Valeshire',
+        postcode: 'sw1a1aa',
+        udprn: '25990002',
+        cph: '40/139/0012'
+      }),
+      // Rule 10 Negative #2: 28/166/7000 has two holders; one differs ('M1 1AE') and one matches ('SW1A 1AA') -> silent
+      buildSamHolderRow({
+        partyId: 'C9900003',
+        familyName: 'HolderMultiDiff',
+        orgName: 'Cleanse Org 7A',
+        street: '1 Oxford Road',
+        town: 'Manchester',
+        locality: 'Lancashire',
+        postcode: 'M1 1AE',
+        udprn: '25990003',
+        cph: '28/166/7000'
+      }),
+      buildSamHolderRow({
+        partyId: 'C9900004',
+        familyName: 'HolderMultiMatch',
+        orgName: 'Cleanse Org 7B',
+        street: 'Farm Lane',
+        town: 'Test Town',
+        locality: 'Oakshire',
+        postcode: 'SW1A 1AA',
+        udprn: '25990004',
+        cph: '28/166/7000'
+      })
+    ]
+    const combinedHolderContent = `${holderRaw.trimEnd()}\n${cleanseHolderRows.join('\n')}\n`
+
+    await etlClient.purgeStorage({
+      dataset: 'sam_cph_holder',
+      stage: 'all',
+      sourceType: 'external'
+    })
+    await etlClient.uploadFile(
+      'LITP_SAMCPHHOLDER_BASELINE.csv',
+      undefined,
+      combinedHolderContent
+    )
     await etlClient.uploadFile('LITP_SAMPARTY_BASELINE.csv')
     await etlClient.uploadFile('LITP_SAMHERD_BASELINE.csv')
 
