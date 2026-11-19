@@ -422,8 +422,10 @@ test.describe
     const resPartial = await apiClient.getHoldings({ search: 'Updated' })
     expect(resPartial.status()).toBe(200)
     const dataPartial: HoldingDetailPaginatedResult = await resPartial.json()
-    expect(dataPartial.values?.length).toBe(1)
-    expect(dataPartial.values![0].identifier).toBe('37/002/0002')
+    expect(dataPartial.values?.length).toBe(2)
+    expect(dataPartial.values!.map((h) => h.identifier)).toEqual(
+      expect.arrayContaining(['37/002/0002', '37/099/0099'])
+    )
 
     // Shared prefix term match across multiple holdings
     const resShared = await apiClient.getHoldings({ search: 'Feature' })

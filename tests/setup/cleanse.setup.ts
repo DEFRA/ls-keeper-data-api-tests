@@ -117,7 +117,7 @@ function buildSamHolderRow(row: SamHolderSeedRow): string {
 
 setup(
   'ingest CTS and SAM datasets and execute Cleanse rules engine run',
-  async ({ etlClient, cleanseClient }) => {
+  async ({ etlClient, apiClient, cleanseClient }) => {
     setup.setTimeout(180000)
 
     // Read baseline SAM holdings and append Cleanse Rule 1 test scenarios in memory
@@ -235,21 +235,33 @@ setup(
 
     const combinedHoldingContent = `${holdingRaw.trimEnd()}\n${cleanseHoldingRows.join('\n')}\n`
 
-    // Purge previous sam_cph_holdings files from external storage so earlier runs do not leave duplicate rows
-    await etlClient.purgeStorage({
-      dataset: 'sam_cph_holdings',
-      stage: 'all',
-      sourceType: 'external'
-    })
+    // Purge all SAM and CTS datasets from external storage so cleanse-setup is self-contained
+    const cleanseDatasets = [
+      'sam_cph_holdings',
+      'sam_cph_holder',
+      'sam_party',
+      'sam_herd',
+      'cts_location_identifiers',
+      'cts_locations',
+      'cts_addresses',
+      'cts_counties',
+      'cts_parties',
+      'cts_location_party_rels'
+    ]
+    for (const dataset of cleanseDatasets) {
+      await etlClient.purgeStorage({
+        dataset,
+        stage: 'all',
+        sourceType: 'external'
+      })
+    }
 
-    // Upload SAM baseline datasets (with in-memory Cleanse holding rows) and deltas (preserving KRDS API test state)
+    // Upload SAM baseline datasets (with in-memory Cleanse holding rows)
     await etlClient.uploadFile(
       'LITP_SAMCPHHOLDING_BASELINE.csv',
       undefined,
       combinedHoldingContent
     )
-    await etlClient.uploadFile('LITP_SAMCPHHOLDING_DELTA_1.csv')
-    await etlClient.uploadFile('LITP_SAMCPHHOLDING_DELTA_2.csv')
 
     // Append Cleanse Rule 10 holder rows in memory for correspondence address comparison
     const holderFilePath = path.resolve(
@@ -307,11 +319,6 @@ setup(
     ]
     const combinedHolderContent = `${holderRaw.trimEnd()}\n${cleanseHolderRows.join('\n')}\n`
 
-    await etlClient.purgeStorage({
-      dataset: 'sam_cph_holder',
-      stage: 'all',
-      sourceType: 'external'
-    })
     await etlClient.uploadFile(
       'LITP_SAMCPHHOLDER_BASELINE.csv',
       undefined,
@@ -343,6 +350,9 @@ setup(
     // Run Data Bridge ETL import to compile DuckDB and export the SQLite snapshot for Cleanse
     const importStatus = await etlClient.importDataset()
     expect(importStatus.status).toMatch(/^(Succeeded|Completed)$/)
+
+    // Refresh KRDS API SQLite cache so krds-api tests see the latest snapshot if run after cleanse-setup
+    await apiClient.refreshSqliteCache('all', false)
 
     // Trigger the Cleanse rules engine and poll until the run completes
     const completedRun = await cleanseClient.triggerAndWaitForRun()

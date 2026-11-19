@@ -36,10 +36,28 @@ setup(
     const dynamicHerdRow = `1       |I          |H3700099|37/004/0004/01|Cattle             |MEAT               |C3700099       |C3700003        |2025-01-01                 |                          |12       |Months               |            |                         \n`
     const combinedHerdContent = `${herdRaw.trimEnd()}\n${dynamicHerdRow}`
 
-    // Upload the complete SAM dataset baseline and deltas
+    // Purge SAM datasets from external storage so api-setup is self-contained regardless of prior runs
+    const samDatasets = [
+      'sam_cph_holdings',
+      'sam_cph_holder',
+      'sam_party',
+      'sam_herd'
+    ]
+    for (const dataset of samDatasets) {
+      await etlClient.purgeStorage({
+        dataset,
+        stage: 'all',
+        sourceType: 'external'
+      })
+    }
+
+    // Apply SAM CPH Holdings baseline and DELTA_2 sequentially so 37/002/0002 reaches 'Feature 1 Re-Updated'
     await etlClient.uploadFile('LITP_SAMCPHHOLDING_BASELINE.csv')
-    await etlClient.uploadFile('LITP_SAMCPHHOLDING_DELTA_1.csv')
+    await etlClient.importDataset('sam_cph_holdings')
+
     await etlClient.uploadFile('LITP_SAMCPHHOLDING_DELTA_2.csv')
+    await etlClient.importDataset('sam_cph_holdings')
+
     await etlClient.uploadFile('LITP_SAMCPHHOLDER_BASELINE.csv')
     await etlClient.uploadFile(
       'LITP_SAMPARTY_BASELINE.csv',
@@ -52,7 +70,7 @@ setup(
       combinedHerdContent
     )
 
-    // Ingest all uploaded datasets into DuckDB and export to SQLite read model once
+    // Ingest all uploaded datasets into DuckDB and export to SQLite read model
     await etlClient.importDataset()
 
     // Trigger SQLite cache refresh (cache=all) so the API picks up the fresh read model
